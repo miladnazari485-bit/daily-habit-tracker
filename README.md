@@ -1,6 +1,36 @@
 # Habit Tracker
 
-A Flutter habit tracker for Android and iOS. The same project runs on the web, so you can preview it in a browser before opening it in Android Studio or Xcode.
+A Flutter habit tracker. The same project runs on Windows, Android, iOS, and the web.
+
+## Open it on Windows in VS Code
+
+1. Install [Flutter for Windows](https://docs.flutter.dev/get-started/install/windows).
+2. Install [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) with the **Desktop development with C++** workload. `flutter run -d windows` needs that compiler.
+3. Unzip `habit-tracker-windows.zip`.
+4. In VS Code, choose **File → Open Folder** and select the unzipped folder. Install the Flutter and Dart extensions when VS Code offers them.
+
+Then, in the VS Code terminal:
+
+```bat
+flutter pub get
+flutter run -d windows
+```
+
+Or double-click `run.bat` in the project folder. That runs those two commands for you.
+
+To start it from the debugger, press **F5** and pick **Habit Tracker (Windows)**.
+
+If the Windows desktop toolchain is not installed yet, this still runs in Chrome:
+
+```bat
+flutter run -d chrome
+```
+
+Check what is missing with:
+
+```bat
+flutter doctor
+```
 
 Each habit and each task is its own item. Habits are checked per day. Tasks are one-off, with a due date. A bottom bar stays on every screen. The first screen opens on today, with that month's days in a strip you can scroll.
 
