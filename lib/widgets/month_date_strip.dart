@@ -16,8 +16,7 @@ class MonthDateStrip extends StatefulWidget {
   final DateTime selected;
   final ValueChanged<DateTime> onSelect;
 
-  /// Increment to center today again, used when the app opens and when the
-  /// user jumps back to today.
+  /// Increment to center today again when the user jumps back to today.
   final int pinToken;
 
   @override
@@ -37,6 +36,10 @@ class _MonthDateStripState extends State<MonthDateStrip> {
   void initState() {
     super.initState();
     _appliedPin = widget.pinToken;
+    if (isSameMonth(widget.selected, widget.visibleMonth)) {
+      _schedule(widget.selected.day, forceCenter: true, jump: true);
+      return;
+    }
     final today = DateTime.now();
     if (isSameMonth(today, widget.visibleMonth)) {
       _schedule(today.day, forceCenter: true, jump: true);

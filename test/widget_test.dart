@@ -37,4 +37,25 @@ void main() {
     expect(find.text('Training'), findsOneWidget);
     expect(find.text('1,698 / 10,000 steps'), findsOneWidget);
   });
+
+  testWidgets('reopens on the calendar month the user left', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues({});
+    final first = AppState();
+    await first.load();
+    first.rememberTab(2);
+    first.rememberCalendarMonth(DateTime(2026, 2, 1));
+    await first.settled;
+
+    final restored = AppState();
+    await restored.load();
+    await tester.pumpWidget(HabitTrackerApp(state: restored));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Calendar'), findsOneWidget);
+    expect(find.text('February 2026'), findsOneWidget);
+  });
 }

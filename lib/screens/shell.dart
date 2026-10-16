@@ -21,21 +21,42 @@ class _ShellState extends State<Shell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _tab = 0;
   String? _detailId;
+  bool _sessionApplied = false;
 
   void _setTab(int index) {
     setState(() {
       _tab = index;
       _detailId = null;
     });
+    final state = AppScope.of(context);
+    state.rememberTab(index);
+    state.rememberDetail(null);
   }
 
-  void _openHabit(String id) => setState(() => _detailId = id);
+  void _openHabit(String id) {
+    setState(() => _detailId = id);
+    AppScope.of(context).rememberDetail(id);
+  }
+
+  void _closeHabit() {
+    setState(() => _detailId = null);
+    AppScope.of(context).rememberDetail(null);
+  }
 
   void _openMenu() => _scaffoldKey.currentState?.openDrawer();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_sessionApplied) {
+      _sessionApplied = true;
+      final saved = AppScope.of(context);
+      _tab = saved.tab;
+      final detail = saved.detailHabitId;
+      if (detail != null && saved.habitById(detail) != null) {
+        _detailId = detail;
+      }
+    }
     final colors = AppColors.of(context);
     final night = Theme.of(context).brightness == Brightness.dark;
     SystemChrome.setSystemUIOverlayStyle(
@@ -64,7 +85,7 @@ class _ShellState extends State<Shell> {
           Navigator.pop(context);
           return;
         }
-        if (_detailId != null) setState(() => _detailId = null);
+        if (_detailId != null) _closeHabit();
       },
       child: Scaffold(
         key: _scaffoldKey,
@@ -130,7 +151,7 @@ class _ShellState extends State<Shell> {
                   color: colors.scaffold,
                   child: HabitDetailScreen(
                     habitId: _detailId!,
-                    onBack: () => setState(() => _detailId = null),
+                    onBack: _closeHabit,
                   ),
                 ),
               ),
@@ -323,7 +344,7 @@ class _AppDrawer extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                'Checks stay on this device.',
+                'Checks and math stay on this phone. Nothing is sent to a server.',
                 style: TextStyle(
                   color: colors.muted,
                   fontWeight: FontWeight.w600,

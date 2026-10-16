@@ -19,17 +19,44 @@ class AppState extends ChangeNotifier {
     List<TaskItem>? tasks,
     DateTime? selected,
     bool night = false,
+    int tab = 0,
+    DateTime? todayMonth,
+    bool habitsOpen = true,
+    DateTime? calendarMonth,
+    String? detailHabitId,
+    DateTime? detailMonth,
   }) : _habits = List<Habit>.of(habits ?? const []),
        _tasks = List<TaskItem>.of(tasks ?? const []),
        _selectedDate = dateOnly(selected ?? DateTime.now()),
        _ready = true {
     _night = night;
+    _tab = tab < 0 || tab > 3 ? 0 : tab;
+    _habitsOpen = habitsOpen;
+    _detailHabitId = detailHabitId;
+    final anchor = _selectedDate;
+    _todayMonth = DateTime(
+      (todayMonth ?? anchor).year,
+      (todayMonth ?? anchor).month,
+    );
+    _calendarMonth = DateTime(
+      (calendarMonth ?? anchor).year,
+      (calendarMonth ?? anchor).month,
+    );
+    if (detailMonth != null) {
+      _detailMonth = DateTime(detailMonth.year, detailMonth.month);
+    }
   }
 
   final List<Habit> _habits;
   final List<TaskItem> _tasks;
   DateTime _selectedDate = dateOnly(DateTime.now());
   bool _night = false;
+  int _tab = 0;
+  bool _habitsOpen = true;
+  DateTime _todayMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  String? _detailHabitId;
+  DateTime? _detailMonth;
   bool _ready = false;
   bool _loading = false;
   Future<void> _queue = Future<void>.value();
@@ -39,6 +66,12 @@ class AppState extends ChangeNotifier {
   bool get night => _night;
   ThemeMode get themeMode => _night ? ThemeMode.dark : ThemeMode.light;
   DateTime get selectedDate => _selectedDate;
+  int get tab => _tab;
+  bool get habitsOpen => _habitsOpen;
+  DateTime get todayMonth => _todayMonth;
+  DateTime get calendarMonth => _calendarMonth;
+  String? get detailHabitId => _detailHabitId;
+  DateTime? get detailMonth => _detailMonth;
   List<Habit> get habits => List<Habit>.unmodifiable(_habits);
   List<TaskItem> get tasks => List<TaskItem>.unmodifiable(_tasks);
 
@@ -81,8 +114,11 @@ class AppState extends ChangeNotifier {
       _tasks
         ..clear()
         ..addAll(decoded.tasks);
+      _applySession(decoded.session);
     }
-    _selectedDate = dateOnly(DateTime.now());
+    if (_detailHabitId != null && habitById(_detailHabitId!) == null) {
+      _detailHabitId = null;
+    }
     _ready = true;
     _loading = false;
     notifyListeners();
@@ -94,6 +130,47 @@ class AppState extends ChangeNotifier {
     if (isSameDay(next, _selectedDate)) return;
     _selectedDate = next;
     notifyListeners();
+    _scheduleSave();
+  }
+
+  void rememberTab(int index) {
+    if (index < 0 || index > 3 || _tab == index) return;
+    _tab = index;
+    _scheduleSave();
+  }
+
+  void rememberHabitsOpen(bool value) {
+    if (_habitsOpen == value) return;
+    _habitsOpen = value;
+    _scheduleSave();
+  }
+
+  void rememberTodayMonth(DateTime month) {
+    final next = DateTime(month.year, month.month);
+    if (isSameMonth(_todayMonth, next)) return;
+    _todayMonth = next;
+    _scheduleSave();
+  }
+
+  void rememberCalendarMonth(DateTime month) {
+    final next = DateTime(month.year, month.month);
+    if (isSameMonth(_calendarMonth, next)) return;
+    _calendarMonth = next;
+    _scheduleSave();
+  }
+
+  /// Remembers which habit page is open. Pass null when the user leaves it.
+  void rememberDetail(String? id) {
+    if (_detailHabitId == id) return;
+    _detailHabitId = id;
+    _scheduleSave();
+  }
+
+  void rememberDetailMonth(DateTime month) {
+    final next = DateTime(month.year, month.month);
+    if (_detailMonth != null && isSameMonth(_detailMonth!, next)) return;
+    _detailMonth = next;
+    _scheduleSave();
   }
 
   void setNight(bool value) {
@@ -154,6 +231,7 @@ class AppState extends ChangeNotifier {
 
   void deleteHabit(String id) {
     _habits.removeWhere((habit) => habit.id == id);
+    if (_detailHabitId == id) _detailHabitId = null;
     notifyListeners();
     _scheduleSave();
   }
@@ -230,7 +308,45 @@ class AppState extends ChangeNotifier {
       'night': _night,
       'habits': _habits.map((habit) => habit.toJson()).toList(),
       'tasks': _tasks.map((task) => task.toJson()).toList(),
+      'session': {
+        'tab': _tab,
+        'selectedDate': dateKey(_selectedDate),
+        'todayMonth': monthKey(_todayMonth),
+        'habitsOpen': _habitsOpen,
+        'calendarMonth': monthKey(_calendarMonth),
+        'detailHabitId': _detailHabitId,
+        'detailMonth': _detailMonth == null ? null : monthKey(_detailMonth!),
+      },
     };
+  }
+
+  void _applySession(Map<String, dynamic>? session) {
+    if (session == null) return;
+    final tab = session['tab'];
+    if (tab is int && tab >= 0 && tab <= 3) _tab = tab;
+    final selected = session['selectedDate'];
+    if (selected is String) {
+      final parsed = tryParseDateKey(selected);
+      if (parsed != null) _selectedDate = parsed;
+    }
+    final todayMonth = session['todayMonth'];
+    if (todayMonth is String) {
+      final parsed = tryParseMonthKey(todayMonth);
+      if (parsed != null) _todayMonth = parsed;
+    }
+    final habitsOpen = session['habitsOpen'];
+    if (habitsOpen is bool) _habitsOpen = habitsOpen;
+    final calendarMonth = session['calendarMonth'];
+    if (calendarMonth is String) {
+      final parsed = tryParseMonthKey(calendarMonth);
+      if (parsed != null) _calendarMonth = parsed;
+    }
+    final detail = session['detailHabitId'];
+    _detailHabitId = detail is String && detail.isNotEmpty ? detail : null;
+    final detailMonth = session['detailMonth'];
+    if (detailMonth is String) {
+      _detailMonth = tryParseMonthKey(detailMonth);
+    }
   }
 
   static _Decoded? _decode(String raw) {
@@ -253,10 +369,14 @@ class AppState extends ChangeNotifier {
           if (task != null) tasks.add(task);
         }
       }
+      final sessionRaw = value['session'];
       return _Decoded(
         night: value['night'] == true,
         habits: habits,
         tasks: tasks,
+        session: sessionRaw is Map
+            ? Map<String, dynamic>.from(sessionRaw)
+            : null,
       );
     } on FormatException {
       return null;
@@ -271,9 +391,11 @@ class _Decoded {
     required this.night,
     required this.habits,
     required this.tasks,
+    required this.session,
   });
 
   final bool night;
   final List<Habit> habits;
   final List<TaskItem> tasks;
+  final Map<String, dynamic>? session;
 }

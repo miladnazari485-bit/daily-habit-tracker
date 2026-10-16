@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- No INTERNET permission: streaks, logs, and page sessions stay on the phone. -->
     <application
         android:label="Habit Tracker"
         android:name="${applicationName}"

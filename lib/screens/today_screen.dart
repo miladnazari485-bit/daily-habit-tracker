@@ -34,6 +34,7 @@ class _TodayScreenState extends State<TodayScreen> {
   AppState? _state;
   int _pinToken = 1;
   bool _habitsOpen = true;
+  bool _sessionApplied = false;
 
   @override
   void initState() {
@@ -51,7 +52,12 @@ class _TodayScreenState extends State<TodayScreen> {
       _state?.removeListener(_onState);
       _state = next;
       _state!.addListener(_onState);
+    }
+    if (!_sessionApplied) {
+      _sessionApplied = true;
+      _visibleMonth = DateTime(next.todayMonth.year, next.todayMonth.month);
       _trackedSelected = next.selectedDate;
+      _habitsOpen = next.habitsOpen;
     }
   }
 
@@ -67,21 +73,26 @@ class _TodayScreenState extends State<TodayScreen> {
     if (isSameDay(_trackedSelected, selected)) return;
     _trackedSelected = selected;
     if (!isSameMonth(selected, _visibleMonth)) {
-      setState(() => _visibleMonth = DateTime(selected.year, selected.month));
+      final month = DateTime(selected.year, selected.month);
+      setState(() => _visibleMonth = month);
+      _state!.rememberTodayMonth(month);
     }
   }
 
   void _shiftMonth(int delta) {
-    setState(() {
-      _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
-    });
+    final month = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
+    setState(() => _visibleMonth = month);
+    AppScope.of(context).rememberTodayMonth(month);
   }
 
   void _jumpToday() {
     final today = dateOnly(DateTime.now());
-    AppScope.of(context).selectDate(today);
+    final month = DateTime(today.year, today.month);
+    final state = AppScope.of(context);
+    state.selectDate(today);
+    state.rememberTodayMonth(month);
     setState(() {
-      _visibleMonth = DateTime(today.year, today.month);
+      _visibleMonth = month;
       _pinToken += 1;
     });
   }
@@ -412,7 +423,11 @@ class _TodayScreenState extends State<TodayScreen> {
             borderRadius: BorderRadius.circular(12),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: () => setState(() => _habitsOpen = !_habitsOpen),
+              onTap: () {
+                final open = !_habitsOpen;
+                setState(() => _habitsOpen = open);
+                AppScope.of(context).rememberHabitsOpen(open);
+              },
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,

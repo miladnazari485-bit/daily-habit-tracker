@@ -11,6 +11,20 @@ String dateKey(DateTime value) {
   return '${day.year}-$month-$dayText';
 }
 
+String monthKey(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  return '${value.year}-$month';
+}
+
+DateTime? tryParseMonthKey(String key) {
+  final parts = key.split('-');
+  if (parts.length != 2) return null;
+  final year = int.tryParse(parts[0]);
+  final month = int.tryParse(parts[1]);
+  if (year == null || month == null || month < 1 || month > 12) return null;
+  return DateTime(year, month);
+}
+
 DateTime? tryParseDateKey(String key) {
   final parts = key.split('-');
   if (parts.length != 3) return null;

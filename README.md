@@ -32,7 +32,7 @@ Check what is missing with:
 flutter doctor
 ```
 
-Each habit and each task is its own item. Habits are checked per day. Tasks are one-off, with a due date. A bottom bar stays on every screen. The first screen opens on today, with that month's days in a strip you can scroll.
+Each habit and each task is its own item. Habits are checked per day. Tasks are one-off, with a due date. A bottom bar stays on every screen. The first launch opens on today, with that month's days in a strip you can scroll. After that, the phone remembers the day, the month on each page, whether the habit list is open, and which habit you had open.
 
 ## What you can do
 
@@ -43,7 +43,9 @@ Each habit and each task is its own item. Habits are checked per day. Tasks are 
 - Switch between day mood and night mood. The choice is saved on the device.
 - Review the month on the calendar and streaks on Insights.
 
-The first launch includes Wake Up Early, Drink Water, Training, and an overdue "Buy groceries" task so the board is not empty. Anything you change is stored on the device with `shared_preferences`.
+The first launch includes Wake Up Early, Drink Water, Training, and an overdue "Buy groceries" task so the board is not empty.
+
+Everything needed to calculate streaks, month rates, and daily progress is stored on the phone with `shared_preferences`. The release app does not request the internet permission and does not call a server.
 
 ## Run it
 
@@ -66,6 +68,14 @@ Android (device or emulator):
 ```bash
 flutter run -d android
 ```
+
+Installable APK (all calculations stay on the phone):
+
+```bash
+flutter build apk --release
+```
+
+The file is `build/app/outputs/flutter-apk/app-release.apk`. Copy it to the phone and open it. If Android asks, allow installs from your file manager. The release build is signed with the debug key so you can install it directly. Replace that signing setup before you publish on the Play Store.
 
 iOS (macOS with Xcode):
 

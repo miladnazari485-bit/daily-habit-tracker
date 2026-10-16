@@ -37,9 +37,18 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_aligned) return;
-    final selected = AppScope.of(context).selectedDate;
-    _month = DateTime(selected.year, selected.month);
+    final state = AppScope.of(context);
+    final saved = state.detailMonth;
+    final selected = state.selectedDate;
+    final month = saved ?? selected;
+    _month = DateTime(month.year, month.month);
     _aligned = true;
+  }
+
+  void _shiftMonth(int delta) {
+    final month = DateTime(_month.year, _month.month + delta);
+    setState(() => _month = month);
+    AppScope.of(context).rememberDetailMonth(month);
   }
 
   Future<void> _editDay(Habit habit, DateTime day) async {
@@ -188,9 +197,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
                 children: [
                   IconButton(
                     tooltip: 'Previous month',
-                    onPressed: () => setState(() {
-                      _month = DateTime(_month.year, _month.month - 1);
-                    }),
+                    onPressed: () => _shiftMonth(-1),
                     icon: const Icon(Icons.chevron_left_rounded),
                   ),
                   Expanded(
@@ -205,9 +212,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
                   ),
                   IconButton(
                     tooltip: 'Next month',
-                    onPressed: () => setState(() {
-                      _month = DateTime(_month.year, _month.month + 1);
-                    }),
+                    onPressed: () => _shiftMonth(1),
                     icon: const Icon(Icons.chevron_right_rounded),
                   ),
                 ],

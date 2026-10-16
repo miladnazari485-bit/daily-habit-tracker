@@ -23,12 +23,28 @@ class CalendarScreen extends StatefulWidget {
 
 class _CalendarScreenState extends State<CalendarScreen> {
   late DateTime _month;
+  bool _sessionApplied = false;
 
   @override
   void initState() {
     super.initState();
     final today = dateOnly(DateTime.now());
     _month = DateTime(today.year, today.month);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_sessionApplied) return;
+    _sessionApplied = true;
+    final saved = AppScope.of(context).calendarMonth;
+    _month = DateTime(saved.year, saved.month);
+  }
+
+  void _shiftMonth(int delta) {
+    final month = DateTime(_month.year, _month.month + delta);
+    setState(() => _month = month);
+    AppScope.of(context).rememberCalendarMonth(month);
   }
 
   @override
@@ -56,9 +72,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             children: [
               IconButton(
                 tooltip: 'Previous month',
-                onPressed: () => setState(() {
-                  _month = DateTime(_month.year, _month.month - 1);
-                }),
+                onPressed: () => _shiftMonth(-1),
                 icon: const Icon(Icons.chevron_left_rounded),
               ),
               Expanded(
@@ -74,9 +88,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               IconButton(
                 tooltip: 'Next month',
-                onPressed: () => setState(() {
-                  _month = DateTime(_month.year, _month.month + 1);
-                }),
+                onPressed: () => _shiftMonth(1),
                 icon: const Icon(Icons.chevron_right_rounded),
               ),
             ],
