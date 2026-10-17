@@ -52,6 +52,14 @@ int daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
 /// Sunday is 0, matching the week strip in the app.
 int sundayIndex(DateTime day) => day.weekday % 7;
 
+/// First day of the week that contains [day]. [weekStart] 0 is Sunday.
+DateTime startOfWeek(DateTime day, {int weekStart = 0}) {
+  final date = dateOnly(day);
+  final start = weekStart == 1 ? 1 : 0;
+  final delta = (sundayIndex(date) - start + 7) % 7;
+  return date.subtract(Duration(days: delta));
+}
+
 const weekdayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const weekdayLong = [

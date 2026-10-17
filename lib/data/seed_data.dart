@@ -1,12 +1,18 @@
 import '../logic/dates.dart';
 import '../models/habit.dart';
+import '../models/journal_entry.dart';
 import '../models/task_item.dart';
 
 class SeedData {
-  const SeedData({required this.habits, required this.tasks});
+  const SeedData({
+    required this.habits,
+    required this.tasks,
+    required this.journal,
+  });
 
   final List<Habit> habits;
   final List<TaskItem> tasks;
+  final List<JournalEntry> journal;
 }
 
 int _mix(int seed) {
@@ -52,6 +58,34 @@ SeedData buildSeed(DateTime now) {
   trainingLog[dateKey(today)] = 1698;
 
   final created = today.subtract(const Duration(days: 180));
+  final waterDay = today.subtract(const Duration(days: 6));
+  waterLog[dateKey(waterDay)] = 1;
+  String? latestWake;
+  for (final key in wakeLog.keys) {
+    if (latestWake == null || key.compareTo(latestWake) > 0) latestWake = key;
+  }
+  final wakeDay = latestWake == null ? null : tryParseDateKey(latestWake);
+  final journal = <JournalEntry>[
+    if (wakeDay != null)
+      JournalEntry(
+        id: 'journal-wake',
+        habitId: 'wake',
+        title: 'Wake Up Early',
+        amount: 1,
+        unit: 'time',
+        at: DateTime(wakeDay.year, wakeDay.month, wakeDay.day, 0, 26),
+        colorValue: 0xFFF6D452,
+      ),
+    JournalEntry(
+      id: 'journal-water',
+      habitId: 'water',
+      title: 'Drink Water',
+      amount: 1,
+      unit: 'liters',
+      at: DateTime(waterDay.year, waterDay.month, waterDay.day, 11, 11),
+      colorValue: 0xFFCBC6F6,
+    ),
+  ];
   final habits = [
     Habit(
       id: 'wake',
@@ -93,7 +127,13 @@ SeedData buildSeed(DateTime now) {
   return SeedData(
     habits: habits,
     tasks: [
-      TaskItem(id: 'groceries', title: 'Buy groceries', dueDate: groceriesDue),
+      TaskItem(
+        id: 'groceries',
+        title: 'Buy groceries',
+        dueDate: groceriesDue,
+        minutes: 30,
+      ),
     ],
+    journal: journal,
   );
 }

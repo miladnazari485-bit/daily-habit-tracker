@@ -7,12 +7,16 @@ class TaskItem {
     required this.title,
     required DateTime dueDate,
     this.done = false,
+    this.minutes = 9 * 60,
   }) : dueDate = dateOnly(dueDate);
 
   final String id;
   final String title;
   final DateTime dueDate;
   final bool done;
+
+  /// Minutes from midnight, used to place the task on the calendar.
+  final int minutes;
 
   bool isOverdueOn(DateTime today) {
     return !done && dueDate.isBefore(dateOnly(today));
@@ -23,12 +27,14 @@ class TaskItem {
     String? title,
     DateTime? dueDate,
     bool? done,
+    int? minutes,
   }) {
     return TaskItem(
       id: id ?? this.id,
       title: title ?? this.title,
       dueDate: dueDate ?? this.dueDate,
       done: done ?? this.done,
+      minutes: minutes ?? this.minutes,
     );
   }
 
@@ -38,6 +44,7 @@ class TaskItem {
       'title': title,
       'dueDate': dateKey(dueDate),
       'done': done,
+      'minutes': minutes,
     };
   }
 
@@ -50,11 +57,14 @@ class TaskItem {
     if (due is! String) return null;
     final dueDate = tryParseDateKey(due);
     if (dueDate == null) return null;
+    final minutesRaw = raw['minutes'];
+    final minutes = minutesRaw is num ? minutesRaw.round() : 9 * 60;
     return TaskItem(
       id: id,
       title: title.trim(),
       dueDate: dueDate,
       done: raw['done'] == true,
+      minutes: minutes.clamp(0, 1439),
     );
   }
 }

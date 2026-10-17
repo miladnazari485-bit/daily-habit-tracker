@@ -59,6 +59,17 @@ class _HabitTrackerAppState extends State<HabitTrackerApp> {
         themeMode: widget.state.themeMode,
         themeAnimationDuration: const Duration(milliseconds: 250),
         scrollBehavior: const AppScrollBehavior(),
+        builder: (context, child) {
+          final scale = widget.state.fontScale;
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(
+                scale * MediaQuery.textScalerOf(context).scale(1),
+              ),
+            ),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
         home: const ResponsiveFrame(child: Shell()),
       ),
     );

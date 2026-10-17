@@ -6,8 +6,10 @@ import '../widgets/app_scope.dart';
 import '../widgets/sheets.dart';
 import 'calendar_screen.dart';
 import 'habit_detail_screen.dart';
+import 'habit_picker_screen.dart';
+import 'journal_screen.dart';
+import 'settings_screen.dart';
 import 'stats_screen.dart';
-import 'tasks_screen.dart';
 import 'today_screen.dart';
 
 class Shell extends StatefulWidget {
@@ -21,12 +23,18 @@ class _ShellState extends State<Shell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _tab = 0;
   String? _detailId;
+  bool _statsOpen = false;
+  bool _achievementsOpen = false;
+  bool _picking = false;
   bool _sessionApplied = false;
 
   void _setTab(int index) {
     setState(() {
       _tab = index;
       _detailId = null;
+      _statsOpen = false;
+      _achievementsOpen = false;
+      _picking = false;
     });
     final state = AppScope.of(context);
     state.rememberTab(index);
@@ -34,7 +42,11 @@ class _ShellState extends State<Shell> {
   }
 
   void _openHabit(String id) {
-    setState(() => _detailId = id);
+    setState(() {
+      _detailId = id;
+      _statsOpen = false;
+      _picking = false;
+    });
     AppScope.of(context).rememberDetail(id);
   }
 
@@ -44,6 +56,12 @@ class _ShellState extends State<Shell> {
   }
 
   void _openMenu() => _scaffoldKey.currentState?.openDrawer();
+
+  void _showToday(String span) {
+    AppScope.of(context).rememberSpan(span);
+    Navigator.pop(context);
+    _setTab(0);
+  }
 
   @override
   void didChangeDependencies() {
@@ -77,12 +95,25 @@ class _ShellState extends State<Shell> {
     final state = AppScope.of(context);
     final colors = AppColors.of(context);
     final drawerOpen = _scaffoldKey.currentState?.isDrawerOpen ?? false;
+    final overlay = _detailId != null || _statsOpen || _achievementsOpen;
     return PopScope(
-      canPop: _detailId == null && !drawerOpen,
+      canPop: !overlay && !_picking && !drawerOpen,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
           Navigator.pop(context);
+          return;
+        }
+        if (_picking) {
+          setState(() => _picking = false);
+          return;
+        }
+        if (_achievementsOpen) {
+          setState(() => _achievementsOpen = false);
+          return;
+        }
+        if (_statsOpen) {
+          setState(() => _statsOpen = false);
           return;
         }
         if (_detailId != null) _closeHabit();
@@ -91,38 +122,28 @@ class _ShellState extends State<Shell> {
         key: _scaffoldKey,
         resizeToAvoidBottomInset: false,
         drawer: _AppDrawer(
-          night: state.night,
-          habitCount: state.habits.length,
-          openTasks: state.tasks.where((task) => !task.done).length,
-          onNight: state.setNight,
-          onOpenTasks: () {
-            Navigator.pop(context);
-            _setTab(1);
-          },
-          onOpenStats: () {
-            Navigator.pop(context);
-            _setTab(3);
-          },
+          span: state.todaySpan,
+          appearance: state.appearance,
+          onSpan: _showToday,
+          onAppearance: state.setAppearance,
         ),
-        floatingActionButton: _detailId == null
-            ? FloatingActionButton(
+        floatingActionButton: overlay || _picking || _tab == 3
+            ? null
+            : FloatingActionButton(
                 tooltip: 'Add',
                 backgroundColor: colors.fab,
                 foregroundColor: colors.onFab,
                 elevation: 2,
                 shape: const CircleBorder(),
                 onPressed: () {
-                  if (_tab == 1) {
-                    showComposer(context, kind: ComposerKind.task);
-                  } else if (_tab == 0) {
-                    showComposer(context);
+                  if (_tab == 0 || _tab == 1) {
+                    setState(() => _picking = true);
                   } else {
-                    showComposer(context, kind: ComposerKind.habit);
+                    showComposer(context, kind: ComposerKind.task);
                   }
                 },
                 child: const Icon(Icons.add_rounded, size: 30),
-              )
-            : null,
+              ),
         bottomNavigationBar: _BottomBar(index: _tab, onChanged: _setTab),
         body: Stack(
           children: [
@@ -131,10 +152,13 @@ class _ShellState extends State<Shell> {
               children: [
                 TodayScreen(
                   onMenu: _openMenu,
-                  onOpenStats: () => _setTab(3),
+                  onOpenStats: () => setState(() {
+                    _statsOpen = true;
+                    _detailId = null;
+                  }),
                   onOpenHabit: _openHabit,
                 ),
-                TasksScreen(onMenu: _openMenu),
+                JournalScreen(onMenu: _openMenu),
                 CalendarScreen(
                   onMenu: _openMenu,
                   onOpenDay: (day) {
@@ -142,9 +166,18 @@ class _ShellState extends State<Shell> {
                     _setTab(0);
                   },
                 ),
-                StatsScreen(onMenu: _openMenu, onOpenHabit: _openHabit),
+                SettingsScreen(
+                  onMenu: _openMenu,
+                  onAchievements: () => setState(() => _achievementsOpen = true),
+                ),
               ],
             ),
+            if (_picking)
+              Positioned.fill(
+                child: HabitPickerScreen(
+                  onClose: () => setState(() => _picking = false),
+                ),
+              ),
             if (_detailId != null)
               Positioned.fill(
                 child: Material(
@@ -153,6 +186,22 @@ class _ShellState extends State<Shell> {
                     habitId: _detailId!,
                     onBack: _closeHabit,
                   ),
+                ),
+              ),
+            if (_statsOpen)
+              Positioned.fill(
+                child: Material(
+                  color: colors.scaffold,
+                  child: StatsScreen(
+                    onMenu: () => setState(() => _statsOpen = false),
+                    onOpenHabit: _openHabit,
+                  ),
+                ),
+              ),
+            if (_achievementsOpen)
+              Positioned.fill(
+                child: AchievementsPage(
+                  onClose: () => setState(() => _achievementsOpen = false),
                 ),
               ),
           ],
@@ -173,9 +222,9 @@ class _BottomBar extends StatelessWidget {
     final colors = AppColors.of(context);
     const items = [
       (Icons.check_rounded, 'Today'),
-      (Icons.list_alt_rounded, 'Tasks'),
+      (Icons.article_outlined, 'Journal'),
       (Icons.calendar_today_rounded, 'Calendar'),
-      (Icons.bar_chart_rounded, 'Insights'),
+      (Icons.tune_rounded, 'Settings'),
     ];
     return Material(
       color: colors.scaffold,
@@ -238,20 +287,16 @@ class _NavButton extends StatelessWidget {
 
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
-    required this.night,
-    required this.habitCount,
-    required this.openTasks,
-    required this.onNight,
-    required this.onOpenTasks,
-    required this.onOpenStats,
+    required this.span,
+    required this.appearance,
+    required this.onSpan,
+    required this.onAppearance,
   });
 
-  final bool night;
-  final int habitCount;
-  final int openTasks;
-  final ValueChanged<bool> onNight;
-  final VoidCallback onOpenTasks;
-  final VoidCallback onOpenStats;
+  final String span;
+  final String appearance;
+  final ValueChanged<String> onSpan;
+  final ValueChanged<String> onAppearance;
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +310,7 @@ class _AppDrawer extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Habit Tracker',
+                'First page',
                 style: TextStyle(
                   color: colors.ink,
                   fontSize: 26,
@@ -275,19 +320,21 @@ class _AppDrawer extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'A separate check for every habit, every day.',
-                style: TextStyle(
-                  color: colors.muted,
-                  fontWeight: FontWeight.w600,
-                ),
+                'Weekly or monthly changes the day picker on Today.',
+                style: TextStyle(color: colors.muted, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 18),
+              _ChoiceRow(
+                left: 'Weekly',
+                right: 'Monthly',
+                leftOn: span != 'month',
+                onLeft: () => onSpan('week'),
+                onRight: () => onSpan('month'),
               ),
               const SizedBox(height: 22),
               Text(
-                'Mood',
-                style: TextStyle(
-                  color: colors.ink,
-                  fontWeight: FontWeight.w800,
-                ),
+                'Appearance',
+                style: TextStyle(color: colors.ink, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
               Container(
@@ -298,53 +345,25 @@ class _AppDrawer extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    _mood(
-                      colors,
-                      'Day',
-                      Icons.light_mode_rounded,
-                      !night,
-                      () => onNight(false),
-                    ),
-                    _mood(
+                    _mini(colors, 'Day', appearance == 'day', () => onAppearance('day')),
+                    _mini(
                       colors,
                       'Night',
-                      Icons.dark_mode_rounded,
-                      night,
-                      () => onNight(true),
+                      appearance == 'night',
+                      () => onAppearance('night'),
+                    ),
+                    _mini(
+                      colors,
+                      'System',
+                      appearance == 'system',
+                      () => onAppearance('system'),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 22),
-              Text(
-                '$habitCount ${habitCount == 1 ? 'habit' : 'habits'} · $openTasks open ${openTasks == 1 ? 'task' : 'tasks'}',
-                style: TextStyle(
-                  color: colors.ink,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.list_alt_rounded),
-                title: const Text(
-                  'Tasks',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                onTap: onOpenTasks,
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.bar_chart_rounded),
-                title: const Text(
-                  'Insights',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                onTap: onOpenStats,
-              ),
               const Spacer(),
               Text(
-                'Checks and math stay on this phone. Nothing is sent to a server.',
+                'Checks, the journal, and this menu stay on this phone.',
                 style: TextStyle(
                   color: colors.muted,
                   fontWeight: FontWeight.w600,
@@ -358,13 +377,7 @@ class _AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _mood(
-    AppColors colors,
-    String label,
-    IconData icon,
-    bool selected,
-    VoidCallback onTap,
-  ) {
+  Widget _mini(AppColors colors, String label, bool selected, VoidCallback onTap) {
     return Expanded(
       child: Material(
         color: selected ? colors.card : Colors.transparent,
@@ -374,19 +387,65 @@ class _AppDrawer extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 18, color: colors.ink),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: colors.ink,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.ink, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChoiceRow extends StatelessWidget {
+  const _ChoiceRow({
+    required this.left,
+    required this.right,
+    required this.leftOn,
+    required this.onLeft,
+    required this.onRight,
+  });
+
+  final String left;
+  final String right;
+  final bool leftOn;
+  final VoidCallback onLeft;
+  final VoidCallback onRight;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: colors.chip,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          _side(colors, left, leftOn, onLeft),
+          _side(colors, right, !leftOn, onRight),
+        ],
+      ),
+    );
+  }
+
+  Widget _side(AppColors colors, String label, bool selected, VoidCallback onTap) {
+    return Expanded(
+      child: Material(
+        color: selected ? colors.card : Colors.transparent,
+        borderRadius: BorderRadius.circular(11),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(11),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.ink, fontWeight: FontWeight.w800),
             ),
           ),
         ),

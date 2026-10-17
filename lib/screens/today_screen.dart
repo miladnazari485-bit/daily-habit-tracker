@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../logic/dates.dart';
+import '../logic/habit_math.dart';
 import '../models/habit.dart';
+import '../models/task_item.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_scope.dart';
 import '../widgets/habit_card.dart';
-import '../widgets/month_date_strip.dart';
 import '../widgets/page_header.dart';
 import '../widgets/sheets.dart';
-import '../widgets/task_card.dart';
+import '../widgets/timer_sheet.dart';
 
 class TodayScreen extends StatefulWidget {
   const TodayScreen({
@@ -29,20 +29,9 @@ class TodayScreen extends StatefulWidget {
 }
 
 class _TodayScreenState extends State<TodayScreen> {
-  late DateTime _visibleMonth;
   DateTime _trackedSelected = dateOnly(DateTime.now());
   AppState? _state;
-  int _pinToken = 1;
-  bool _habitsOpen = true;
   bool _sessionApplied = false;
-
-  @override
-  void initState() {
-    super.initState();
-    final today = dateOnly(DateTime.now());
-    _visibleMonth = DateTime(today.year, today.month);
-    _trackedSelected = today;
-  }
 
   @override
   void didChangeDependencies() {
@@ -55,9 +44,7 @@ class _TodayScreenState extends State<TodayScreen> {
     }
     if (!_sessionApplied) {
       _sessionApplied = true;
-      _visibleMonth = DateTime(next.todayMonth.year, next.todayMonth.month);
       _trackedSelected = next.selectedDate;
-      _habitsOpen = next.habitsOpen;
     }
   }
 
@@ -72,61 +59,54 @@ class _TodayScreenState extends State<TodayScreen> {
     final selected = _state!.selectedDate;
     if (isSameDay(_trackedSelected, selected)) return;
     _trackedSelected = selected;
-    if (!isSameMonth(selected, _visibleMonth)) {
-      final month = DateTime(selected.year, selected.month);
-      setState(() => _visibleMonth = month);
+    final month = DateTime(selected.year, selected.month);
+    if (!isSameMonth(month, _state!.todayMonth)) {
       _state!.rememberTodayMonth(month);
     }
   }
 
-  void _shiftMonth(int delta) {
-    final month = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
-    setState(() => _visibleMonth = month);
-    AppScope.of(context).rememberTodayMonth(month);
-  }
-
-  void _jumpToday() {
-    final today = dateOnly(DateTime.now());
-    final month = DateTime(today.year, today.month);
-    final state = AppScope.of(context);
-    state.selectDate(today);
-    state.rememberTodayMonth(month);
-    setState(() {
-      _visibleMonth = month;
-      _pinToken += 1;
-    });
-  }
-
   void _blocked() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('You can log a habit once that day arrives.'),
-      ),
+      const SnackBar(content: Text('You can log a habit once that day arrives.')),
     );
   }
 
-  Future<void> _postpone(BuildContext anchor) async {
+  Future<void> _postpone(TaskItem task) async {
     final state = AppScope.of(context);
-    final box = anchor.findRenderObject() as RenderBox?;
-    final overlay = Overlay.of(anchor).context.findRenderObject() as RenderBox?;
-    if (box == null || overlay == null) return;
-    final origin = box.localToGlobal(Offset.zero, ancestor: overlay);
-    final position = RelativeRect.fromRect(
-      origin & box.size,
-      Offset.zero & overlay.size,
-    );
-    final choice = await showMenu<String>(
-      context: anchor,
-      position: position,
-      items: const [
-        PopupMenuItem(value: 'today', child: Text('Today')),
-        PopupMenuItem(value: 'tomorrow', child: Text('Tomorrow')),
-        PopupMenuItem(value: 'week', child: Text('Next week')),
-        PopupMenuItem(value: 'pick', child: Text('Pick a date')),
-      ],
+    final today = dateOnly(DateTime.now());
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.of(context).card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Today'),
+                onTap: () => Navigator.pop(context, 'today'),
+              ),
+              ListTile(
+                title: const Text('Tomorrow'),
+                onTap: () => Navigator.pop(context, 'tomorrow'),
+              ),
+              ListTile(
+                title: const Text('Next week'),
+                onTap: () => Navigator.pop(context, 'week'),
+              ),
+              ListTile(
+                title: const Text('Pick a date'),
+                onTap: () => Navigator.pop(context, 'pick'),
+              ),
+            ],
+          ),
+        );
+      },
     );
     if (!mounted || choice == null) return;
-    final today = dateOnly(DateTime.now());
     DateTime? target;
     if (choice == 'today') target = today;
     if (choice == 'tomorrow') target = today.add(const Duration(days: 1));
@@ -142,11 +122,7 @@ class _TodayScreenState extends State<TodayScreen> {
       target = dateOnly(picked);
     }
     if (target == null) return;
-    state.postponeOverdueTo(target);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Postponed to ${shortMonthDay(target)}')),
-    );
+    state.postponeTask(task.id, target);
   }
 
   @override
@@ -155,87 +131,122 @@ class _TodayScreenState extends State<TodayScreen> {
     final colors = AppColors.of(context);
     final selected = state.selectedDate;
     final today = dateOnly(DateTime.now());
-    final viewingToday = isSameDay(selected, today);
-    final overdue = state.overdueTasks(today);
-    final showTodayJump = !viewingToday || !isSameMonth(_visibleMonth, today);
+    final habits = state.activeHabits;
+    final openHabits = habits.where((habit) => !isComplete(habit, selected));
+    final doneHabits = habits.where((habit) => isComplete(habit, selected));
+    final doneCount = doneHabits.length;
+    final tasks = _tasksFor(state, selected, today);
 
     return Column(
       children: [
         PageHeader(
           title: 'Today',
           night: state.night,
-          badge: overdue.length,
+          badge: doneCount,
           onMenu: widget.onMenu,
           onToggleTheme: state.toggleNight,
           onChart: widget.onOpenStats,
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: 'Previous month',
-                onPressed: () => _shiftMonth(-1),
-                icon: const Icon(Icons.chevron_left_rounded),
-              ),
-              Expanded(
-                child: Text(
-                  monthYearLabel(_visibleMonth),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: colors.ink,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-              if (showTodayJump)
-                TextButton(onPressed: _jumpToday, child: const Text('Today')),
-              IconButton(
-                tooltip: 'Next month',
-                onPressed: () => _shiftMonth(1),
-                icon: const Icon(Icons.chevron_right_rounded),
-              ),
-            ],
+          trailing: HeaderIconButton(
+            tooltip: 'Timer',
+            onPressed: () => showTimerSheet(context),
+            circular: true,
+            child: Icon(Icons.timer_outlined, color: colors.ink, size: 20),
           ),
         ),
-        MonthDateStrip(
-          visibleMonth: _visibleMonth,
-          selected: selected,
-          pinToken: _pinToken,
-          onSelect: (day) {
-            HapticFeedback.selectionClick();
-            state.selectDate(day);
-          },
-        ),
-        const SizedBox(height: 8),
         Expanded(
           child: ListView(
-            primary: false,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+            key: const ValueKey('today-list'),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
             children: [
-              if (!viewingToday) _viewingBanner(colors, selected, today),
-              if (viewingToday && overdue.isNotEmpty)
-                _overdueBlock(context, colors, overdue),
-              _habitsHeader(colors, state.habits.length),
-              if (_habitsOpen && state.habits.isEmpty)
-                _emptyHabits(colors)
-              else if (_habitsOpen)
-                for (final habit in state.habits) ...[
-                  HabitCard(
-                    habit: habit,
-                    day: selected,
-                    onOpen: () => widget.onOpenHabit(habit.id),
-                    onIncrement: () => _increment(state, habit, selected),
-                    onDecrement: () {
-                      final ok = state.addHabitValue(habit.id, selected, -1);
-                      if (!ok) _blocked();
-                    },
-                    onLog: () => _openLog(habit, selected),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+              _DateSwitcher(
+                selected: selected,
+                monthly: state.todaySpan == 'month',
+                weekStart: state.weekStart,
+                month: state.todayMonth,
+                onSelect: state.selectDate,
+                onMonth: state.rememberTodayMonth,
+              ),
+              const SizedBox(height: 16),
+              _SectionTitle(
+                icon: Icons.checklist_rounded,
+                title: 'To-Do List',
+                count: tasks.where((task) => !task.done).length,
+                open: state.todosOpen,
+                onTap: () => state.rememberTodosOpen(!state.todosOpen),
+              ),
+              if (state.todosOpen) ...[
+                const SizedBox(height: 8),
+                if (tasks.isEmpty)
+                  _EmptyLine(text: 'Nothing is due on this day.')
+                else
+                  for (final task in tasks)
+                    _TodoRow(
+                      task: task,
+                      today: today,
+                      onToggle: () => state.toggleTask(task.id),
+                      onPostpone: () => _postpone(task),
+                    ),
+              ],
+              const SizedBox(height: 18),
+              _SectionTitle(
+                icon: Icons.view_list_rounded,
+                title: 'Daily Habits',
+                count: openHabits.length,
+                open: state.habitsOpen,
+                progress: habits.isEmpty ? 0 : doneCount / habits.length,
+                onTap: () => state.rememberHabitsOpen(!state.habitsOpen),
+              ),
+              if (state.habitsOpen) ...[
+                const SizedBox(height: 8),
+                if (openHabits.isEmpty)
+                  _EmptyLine(
+                    text: habits.isEmpty
+                        ? 'Add a habit with the + button.'
+                        : 'Every habit for this day is in Completed.',
+                  )
+                else
+                  for (final habit in openHabits)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _HabitTile(
+                        habit: habit,
+                        selected: selected,
+                        today: today,
+                        weekStart: state.weekStart,
+                        onOpen: () => widget.onOpenHabit(habit.id),
+                        onBlocked: _blocked,
+                        smartInput: state.smartInput,
+                      ),
+                    ),
+              ],
+              const SizedBox(height: 8),
+              _SectionTitle(
+                icon: Icons.check_circle_outline_rounded,
+                title: 'Completed',
+                count: doneCount,
+                open: state.completedOpen,
+                onTap: () => state.rememberCompletedOpen(!state.completedOpen),
+              ),
+              if (state.completedOpen) ...[
+                const SizedBox(height: 8),
+                if (doneHabits.isEmpty)
+                  const _EmptyLine(text: 'No habit is finished for this day.')
+                else
+                  for (final habit in doneHabits)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _HabitTile(
+                        habit: habit,
+                        selected: selected,
+                        today: today,
+                        weekStart: state.weekStart,
+                        done: true,
+                        onOpen: () => widget.onOpenHabit(habit.id),
+                        onBlocked: _blocked,
+                        smartInput: state.smartInput,
+                      ),
+                    ),
+              ],
             ],
           ),
         ),
@@ -243,242 +254,545 @@ class _TodayScreenState extends State<TodayScreen> {
     );
   }
 
-  void _increment(AppState state, Habit habit, DateTime selected) {
-    final ok = habit.kind == HabitKind.check
-        ? state.toggleHabit(habit.id, selected)
-        : state.addHabitValue(habit.id, selected, 1);
-    if (!ok) _blocked();
+  List<TaskItem> _tasksFor(AppState state, DateTime selected, DateTime today) {
+    final viewingToday = isSameDay(selected, today);
+    final items = state.tasks.where((task) {
+      if (isSameDay(task.dueDate, selected)) return true;
+      return viewingToday && task.isOverdueOn(today);
+    }).toList();
+    items.sort((a, b) {
+      if (a.done != b.done) return a.done ? 1 : -1;
+      return a.dueDate.compareTo(b.dueDate);
+    });
+    return items;
+  }
+}
+
+class _DateSwitcher extends StatelessWidget {
+  const _DateSwitcher({
+    required this.selected,
+    required this.monthly,
+    required this.weekStart,
+    required this.month,
+    required this.onSelect,
+    required this.onMonth,
+  });
+
+  final DateTime selected;
+  final bool monthly;
+  final int weekStart;
+  final DateTime month;
+  final ValueChanged<DateTime> onSelect;
+  final ValueChanged<DateTime> onMonth;
+
+  @override
+  Widget build(BuildContext context) {
+    if (monthly) return _monthGrid(context);
+    return _weekRow(context);
   }
 
-  Future<void> _openLog(Habit habit, DateTime selected) async {
-    if (dateOnly(selected).isAfter(dateOnly(DateTime.now()))) {
-      _blocked();
-      return;
-    }
-    await showLogSheet(context, habit: habit, day: selected);
+  Widget _weekRow(BuildContext context) {
+    final start = startOfWeek(selected, weekStart: weekStart);
+    final days = [for (var i = 0; i < 7; i++) start.add(Duration(days: i))];
+    return Row(
+      children: [
+        for (final day in days)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: _DayPill(
+                day: day,
+                selected: isSameDay(day, selected),
+                onTap: () => onSelect(day),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
-  Widget _viewingBanner(AppColors colors, DateTime selected, DateTime today) {
-    final future = selected.isAfter(today);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Material(
-        color: colors.band,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-          child: Row(
-            children: [
+  Widget _monthGrid(BuildContext context) {
+    final colors = AppColors.of(context);
+    final first = DateTime(month.year, month.month, 1);
+    final lead = (sundayIndex(first) - (weekStart == 1 ? 1 : 0) + 7) % 7;
+    final count = daysInMonth(month.year, month.month);
+    final labels = weekStart == 1
+        ? const ['M', 'T', 'W', 'Th', 'F', 'S', 'Su']
+        : const ['Su', 'M', 'T', 'W', 'Th', 'F', 'S'];
+    return Column(
+      children: [
+        Row(
+          children: [
+            IconButton(
+              tooltip: 'Previous month',
+              onPressed: () => onMonth(DateTime(month.year, month.month - 1)),
+              icon: const Icon(Icons.chevron_left_rounded),
+            ),
+            Expanded(
+              child: Text(
+                monthYearLabel(month),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: colors.ink,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: 'Next month',
+              onPressed: () => onMonth(DateTime(month.year, month.month + 1)),
+              icon: const Icon(Icons.chevron_right_rounded),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            for (final label in labels)
               Expanded(
                 child: Text(
-                  future
-                      ? '${longDateLabel(selected)} has not started.'
-                      : 'Showing ${longDateLabel(selected)}.',
+                  label,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: colors.ink,
+                    color: colors.muted,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              TextButton(onPressed: _jumpToday, child: const Text('Today')),
+          ],
+        ),
+        const SizedBox(height: 6),
+        GridView.count(
+          crossAxisCount: 7,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          childAspectRatio: 0.7,
+          children: [
+            for (var i = 0; i < lead; i++) const SizedBox.shrink(),
+            for (var day = 1; day <= count; day++)
+              _DayPill(
+                day: DateTime(month.year, month.month, day),
+                selected: isSameDay(DateTime(month.year, month.month, day), selected),
+                onTap: () => onSelect(DateTime(month.year, month.month, day)),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _DayPill extends StatelessWidget {
+  const _DayPill({
+    required this.day,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final DateTime day;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final today = isSameDay(day, DateTime.now());
+    const letters = ['Su', 'M', 'T', 'W', 'Th', 'F', 'S'];
+    return Material(
+      color: selected ? colors.card : colors.chip.withValues(alpha: 0.55),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                letters[sundayIndex(day)],
+                style: TextStyle(
+                  color: today ? colors.ink : colors.muted,
+                  fontSize: 12,
+                  height: 1,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${day.day}',
+                style: TextStyle(
+                  color: colors.ink,
+                  fontSize: 16,
+                  height: 1.1,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _overdueBlock(
-    BuildContext context,
-    AppColors colors,
-    List<dynamic> overdue,
-  ) {
-    final state = AppScope.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.band,
-          borderRadius: BorderRadius.circular(22),
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({
+    required this.icon,
+    required this.title,
+    required this.count,
+    required this.open,
+    required this.onTap,
+    this.progress,
+  });
+
+  final IconData icon;
+  final String title;
+  final int count;
+  final bool open;
+  final VoidCallback onTap;
+  final double? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: colors.muted),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: colors.ink,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            Text(
+              '$count',
+              style: TextStyle(
+                color: colors.muted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (progress != null)
+              _MiniRing(progress: progress!)
+            else
+              Icon(
+                open ? Icons.expand_less_rounded : Icons.chevron_right_rounded,
+                color: colors.muted,
+              ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _MiniRing extends StatelessWidget {
+  const _MiniRing({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return SizedBox(
+      width: 22,
+      height: 22,
+      child: CircularProgressIndicator(
+        value: progress.clamp(0, 1),
+        strokeWidth: 3,
+        backgroundColor: colors.line,
+        color: colors.ink,
+      ),
+    );
+  }
+}
+
+class _EmptyLine extends StatelessWidget {
+  const _EmptyLine({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: AppColors.of(context).muted,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _TodoRow extends StatelessWidget {
+  const _TodoRow({
+    required this.task,
+    required this.today,
+    required this.onToggle,
+    required this.onPostpone,
+  });
+
+  final TaskItem task;
+  final DateTime today;
+  final VoidCallback onToggle;
+  final VoidCallback onPostpone;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final overdue = task.isOverdueOn(today);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onToggle,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: Row(
+              children: [
+                Icon(
+                  task.done
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
+                  color: task.done ? colors.ink : colors.muted,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    task.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.ink,
+                      fontWeight: FontWeight.w700,
+                      decoration: task.done ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                ),
+                if (overdue && !task.done)
+                  TextButton(onPressed: onPostpone, child: const Text('Postpone')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HabitTile extends StatelessWidget {
+  const _HabitTile({
+    required this.habit,
+    required this.selected,
+    required this.today,
+    required this.weekStart,
+    required this.onOpen,
+    required this.onBlocked,
+    required this.smartInput,
+    this.done = false,
+  });
+
+  final Habit habit;
+  final DateTime selected;
+  final DateTime today;
+  final int weekStart;
+  final VoidCallback onOpen;
+  final VoidCallback onBlocked;
+  final bool smartInput;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final state = AppScope.of(context);
+    final value = valueOn(habit, selected);
+    final future = dateOnly(selected).isAfter(today);
+    final start = startOfWeek(selected, weekStart: weekStart);
+    final color = Color(habit.colorValue);
+    return Material(
+      color: colors.card,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onOpen,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
           child: Column(
             children: [
               Row(
                 children: [
-                  IconButton(
-                    tooltip: 'About overdue',
-                    visualDensity: VisualDensity.compact,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    padding: EdgeInsets.zero,
-                    onPressed: () {
-                      showDialog<void>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Overdue'),
-                          content: const Text(
-                            'These tasks are still open after their due date. Postpone them, or check one off when it is done.',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    icon: Icon(
-                      Icons.info_outline_rounded,
-                      color: colors.ink,
-                      size: 20,
-                    ),
+                  Flexible(
+                    child: HabitNameChip(name: habit.name, color: color),
                   ),
-                  Expanded(
+                  const SizedBox(width: 8),
+                  StreakPill(streak: currentStreak(habit, today)),
+                  const SizedBox(width: 8),
+                  Flexible(
                     child: Text(
-                      'Overdue',
+                      '${formatInt(value)} / ${formatInt(habit.goal)} ${habit.unit}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
                       style: TextStyle(
-                        color: colors.ink,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
+                        color: colors.muted,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Builder(
-                    builder: (anchor) {
-                      return Material(
-                        color: colors.postpone,
-                        borderRadius: BorderRadius.circular(12),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () => _postpone(anchor),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Postpone (${overdue.length})',
-                                  style: TextStyle(
-                                    color: colors.ink,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.expand_more_rounded,
-                                  color: colors.ink,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
+                  _Action(
+                    done: done,
+                    large: habit.goal > 20,
+                    color: color,
+                    onTap: () {
+                      if (future) {
+                        onBlocked();
+                        return;
+                      }
+                      if (done) {
+                        state.setHabitValue(habit.id, selected, 0);
+                        return;
+                      }
+                      if (smartInput || habit.goal > 20) {
+                        showLogSheet(context, habit: habit, day: selected);
+                        return;
+                      }
+                      state.addHabitValue(habit.id, selected, 1);
                     },
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              for (final task in state.overdueTasks()) ...[
-                TaskCard(
-                  task: task,
-                  onToggle: () => state.toggleTask(task.id),
-                  onTap: () => showComposer(context, task: task),
-                ),
-                const SizedBox(height: 8),
-              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  for (var i = 0; i < 7; i++)
+                    Expanded(
+                      child: _DayBar(
+                        day: start.add(Duration(days: i)),
+                        ratio: ratioOn(habit, start.add(Duration(days: i))),
+                        color: color,
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _habitsHeader(AppColors colors, int count) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Icon(Icons.list_alt_rounded, size: 18, color: colors.ink),
-          const SizedBox(width: 8),
-          Text(
-            'Daily Habits',
-            style: TextStyle(
-              color: colors.ink,
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
+class _Action extends StatelessWidget {
+  const _Action({
+    required this.done,
+    required this.large,
+    required this.color,
+    required this.onTap,
+  });
+
+  final bool done;
+  final bool large;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: done ? color : colors.muted.withValues(alpha: 0.7),
+              width: 1.6,
             ),
           ),
-          const Spacer(),
-          Material(
-            color: colors.chip,
-            borderRadius: BorderRadius.circular(12),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () {
-                final open = !_habitsOpen;
-                setState(() => _habitsOpen = open);
-                AppScope.of(context).rememberHabitsOpen(open);
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      '$count',
-                      style: TextStyle(
-                        color: colors.ink,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Icon(
-                      _habitsOpen
-                          ? Icons.expand_less_rounded
-                          : Icons.expand_more_rounded,
-                      size: 18,
-                      color: colors.ink,
-                    ),
-                  ],
+          child: Icon(
+            done
+                ? Icons.check_rounded
+                : large
+                ? Icons.refresh_rounded
+                : Icons.add_rounded,
+            size: 20,
+            color: colors.ink,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayBar extends StatelessWidget {
+  const _DayBar({required this.day, required this.ratio, required this.color});
+
+  final DateTime day;
+  final double ratio;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    const letters = ['Su', 'M', 'T', 'W', 'Th', 'F', 'S'];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Column(
+        children: [
+          Container(
+            height: 22,
+            decoration: BoxDecoration(
+              color: colors.chip,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            alignment: Alignment.bottomCenter,
+            child: FractionallySizedBox(
+              heightFactor: ratio <= 0 ? 0.08 : ratio.clamp(0.15, 1),
+              widthFactor: 1,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: ratio <= 0 ? colors.line : color.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _emptyHabits(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 28),
-      child: Column(
-        children: [
-          Icon(Icons.spa_outlined, size: 36, color: colors.muted),
-          const SizedBox(height: 10),
-          Text(
-            'No habits yet',
-            style: TextStyle(
-              color: colors.ink,
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
-            ),
-          ),
           const SizedBox(height: 4),
           Text(
-            'Add one, then check it off on each day.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: colors.muted, fontWeight: FontWeight.w600),
+            letters[sundayIndex(day)],
+            style: TextStyle(
+              color: colors.muted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

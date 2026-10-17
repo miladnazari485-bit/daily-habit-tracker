@@ -21,18 +21,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Today'), findsOneWidget);
-    expect(find.text('Wake Up Early'), findsOneWidget);
-    expect(find.text('Drink Water'), findsOneWidget);
+    expect(find.text('Wake Up Early'), findsWidgets);
+    expect(find.text('Drink Water'), findsWidgets);
     expect(find.text('Buy groceries'), findsOneWidget);
+    expect(find.text('To-Do List'), findsOneWidget);
     expect(find.text('Daily Habits'), findsOneWidget);
-    expect(find.text('Postpone (1)'), findsOneWidget);
+    expect(find.text('Completed'), findsOneWidget);
 
-    await tester.drag(
-      find.byWidgetPredicate(
-        (widget) => widget is ListView && widget.scrollDirection == Axis.vertical,
-      ),
-      const Offset(0, -500),
-    );
+    await tester.drag(find.byKey(const ValueKey('today-list')), const Offset(0, -500));
     await tester.pumpAndSettle();
     expect(find.text('Training'), findsOneWidget);
     expect(find.text('1,698 / 10,000 steps'), findsOneWidget);
@@ -57,5 +53,62 @@ void main() {
 
     expect(find.text('Calendar'), findsOneWidget);
     expect(find.text('February 2026'), findsOneWidget);
+  });
+
+  testWidgets('journal, calendar, settings, and the habit picker open', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState();
+    await state.load();
+    await tester.pumpWidget(HabitTrackerApp(state: state));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Journal'));
+    await tester.pumpAndSettle();
+    expect(find.text('Journal'), findsWidgets);
+    expect(find.text('All Labels'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Calendar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Calendar'), findsOneWidget);
+    expect(find.text('Today'), findsWidgets);
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Appearance'), findsOneWidget);
+    for (var i = 0; i < 8; i++) {
+      if (find.text('Sign in with Google').evaluate().isNotEmpty) break;
+      await tester.drag(
+        find.byKey(const ValueKey('settings-list')),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Manage Account'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Today'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Add'));
+    await tester.pumpAndSettle();
+    expect(find.text('New Habit'), findsOneWidget);
+    expect(find.text('Exercise'), findsOneWidget);
+    expect(find.text('Custom Habit'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Menu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Monthly'), findsOneWidget);
+    await tester.tap(find.text('Monthly'));
+    await tester.pumpAndSettle();
+    expect(find.text('To-Do List'), findsOneWidget);
+    expect(state.todaySpan, 'month');
   });
 }

@@ -13,6 +13,9 @@ class PageHeader extends StatelessWidget {
     this.onChart,
     this.badge = 0,
     this.night = false,
+    this.leadingIcon = Icons.menu_rounded,
+    this.leadingTooltip = 'Menu',
+    this.trailing,
   });
 
   final String title;
@@ -21,6 +24,9 @@ class PageHeader extends StatelessWidget {
   final VoidCallback? onChart;
   final int badge;
   final bool night;
+  final IconData leadingIcon;
+  final String leadingTooltip;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +41,10 @@ class PageHeader extends StatelessWidget {
           children: [
             Row(
               children: [
-                _HeaderButton(
-                  tooltip: 'Menu',
+                HeaderIconButton(
+                  tooltip: leadingTooltip,
                   onPressed: onMenu,
-                  child: Icon(Icons.menu_rounded, color: colors.ink, size: 22),
+                  child: Icon(leadingIcon, color: colors.ink, size: 22),
                 ),
                 if (onChart != null) ...[
                   const SizedBox(width: 8),
@@ -49,18 +55,21 @@ class PageHeader extends StatelessWidget {
                   ),
                 ],
                 const Spacer(),
-                _HeaderButton(
-                  tooltip: night
-                      ? 'Switch to day mood'
-                      : 'Switch to night mood',
-                  onPressed: onToggleTheme,
-                  circular: true,
-                  child: Icon(
-                    night ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                    color: colors.ink,
-                    size: 20,
-                  ),
-                ),
+                trailing ??
+                    HeaderIconButton(
+                      tooltip: night
+                          ? 'Switch to day mood'
+                          : 'Switch to night mood',
+                      onPressed: onToggleTheme,
+                      circular: true,
+                      child: Icon(
+                        night
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
+                        color: colors.ink,
+                        size: 20,
+                      ),
+                    ),
               ],
             ),
             Padding(
@@ -85,8 +94,9 @@ class PageHeader extends StatelessWidget {
   }
 }
 
-class _HeaderButton extends StatelessWidget {
-  const _HeaderButton({
+class HeaderIconButton extends StatelessWidget {
+  const HeaderIconButton({
+    super.key,
     required this.tooltip,
     required this.onPressed,
     required this.child,

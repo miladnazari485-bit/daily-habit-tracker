@@ -10,6 +10,7 @@ class Habit {
     required this.goal,
     required this.unit,
     required this.createdAt,
+    this.archived = false,
     Map<String, int>? log,
   }) : log = Map<String, int>.unmodifiable(log ?? const {});
 
@@ -20,6 +21,7 @@ class Habit {
   final int goal;
   final String unit;
   final DateTime createdAt;
+  final bool archived;
   final Map<String, int> log;
 
   Habit copyWith({
@@ -30,6 +32,7 @@ class Habit {
     int? goal,
     String? unit,
     DateTime? createdAt,
+    bool? archived,
     Map<String, int>? log,
   }) {
     return Habit(
@@ -40,6 +43,7 @@ class Habit {
       goal: goal ?? this.goal,
       unit: unit ?? this.unit,
       createdAt: createdAt ?? this.createdAt,
+      archived: archived ?? this.archived,
       log: log ?? this.log,
     );
   }
@@ -53,6 +57,7 @@ class Habit {
       'goal': goal,
       'unit': unit,
       'createdAt': createdAt.toIso8601String(),
+      'archived': archived,
       'log': log,
     };
   }
@@ -81,6 +86,7 @@ class Habit {
       goal: goal.round().clamp(1, 1000000),
       unit: unit.trim().isEmpty ? 'time' : unit.trim(),
       createdAt: created,
+      archived: raw['archived'] == true,
       log: _readLog(raw['log']),
     );
   }

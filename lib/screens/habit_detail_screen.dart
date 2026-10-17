@@ -230,6 +230,13 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
               _monthGrid(habit, today, selected, colors),
               const SizedBox(height: 8),
               TextButton(
+                onPressed: () {
+                  state.setArchived(habit.id, !habit.archived);
+                  widget.onBack();
+                },
+                child: Text(habit.archived ? 'Restore habit' : 'Archive habit'),
+              ),
+              TextButton(
                 onPressed: () async {
                   final ok = await confirmDelete(
                     context,

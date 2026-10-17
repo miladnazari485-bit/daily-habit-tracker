@@ -32,16 +32,15 @@ Check what is missing with:
 flutter doctor
 ```
 
-Each habit and each task is its own item. Habits are checked per day. Tasks are one-off, with a due date. A bottom bar stays on every screen. The first launch opens on today, with that month's days in a strip you can scroll. After that, the phone remembers the day, the month on each page, whether the habit list is open, and which habit you had open.
+Each habit and each to-do is its own item. Habits are checked per day. To-dos have a due date. A bottom bar stays on every screen: Today, Journal, Calendar, and Settings. The side menu on every page switches Today between a week and a month. After the first launch, the phone remembers the day, that choice, each page, and which habit you had open.
 
 ## What you can do
 
-- Scroll the days of a month and tap one to see that day's checks. Opening the app lands on today.
-- Log a habit for the day you are viewing. Once-a-day habits toggle. Counted habits add a unit. Large goals, like steps, open a logger.
-- Open a habit to check or edit any past day on its own calendar.
-- Keep tasks separate from habits. Overdue tasks can be postponed or checked off.
-- Switch between day mood and night mood. The choice is saved on the device.
-- Review the month on the calendar and streaks on Insights.
+- On Today, work through To-Do List, Daily Habits, and Completed. A habit moves into Completed on the day it hits its goal.
+- Pick a suggested habit from the + button, or make a custom one. The choice is saved on the phone.
+- Read the Journal for each log, with the time, the habit, and the amount.
+- See the week on Calendar as colored blocks for habits and to-dos.
+- Use Settings for appearance, week start, font size, archive, export, and a Google address kept on this phone. Sign-in does not contact Google.
 
 The first launch includes Wake Up Early, Drink Water, Training, and an overdue "Buy groceries" task so the board is not empty.
 

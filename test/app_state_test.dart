@@ -167,4 +167,26 @@ void main() {
     expect(state.detailHabitId, isNull);
     expect(isSameMonth(state.detailMonth!, DateTime(2026, 4)), isTrue);
   });
+
+  test('a habit log is written into the journal and survives reload', () async {
+    final first = AppState();
+    await first.load();
+    final today = dateOnly(DateTime.now());
+    first.setHabitValue('water', today, 2);
+    first.rememberSpan('month');
+    first.signIn('miladnazari485@gmail.com');
+    await first.settled;
+
+    final second = AppState();
+    await second.load();
+    expect(second.todaySpan, 'month');
+    expect(second.accountEmail, 'miladnazari485@gmail.com');
+    expect(second.signedIn, isTrue);
+    final entry = second.journal.where(
+      (item) => item.habitId == 'water' && isSameDay(item.at, today),
+    );
+    expect(entry, hasLength(1));
+    expect(entry.single.amount, 2);
+    expect(isComplete(second.habitById('water')!, today), isFalse);
+  });
 }
