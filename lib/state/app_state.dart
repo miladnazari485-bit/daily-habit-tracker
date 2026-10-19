@@ -122,6 +122,7 @@ class AppState extends ChangeNotifier {
   String? get detailHabitId => _detailHabitId;
   DateTime? get detailMonth => _detailMonth;
   List<Habit> get habits => List<Habit>.unmodifiable(_habits);
+  /// Habits that still appear on Today. Archived ones stay in storage only.
   List<Habit> get activeHabits =>
       List<Habit>.unmodifiable(_habits.where((habit) => !habit.archived));
   List<Habit> get archivedHabits =>
@@ -136,6 +137,7 @@ class AppState extends ChangeNotifier {
   /// Completes after the latest scheduled write finishes.
   Future<void> get settled => _queue;
 
+  /// Open to-dos whose due day is already past.
   List<TaskItem> overdueTasks([DateTime? today]) {
     final day = dateOnly(today ?? DateTime.now());
     final items = _tasks.where((task) => task.isOverdueOn(day)).toList();
@@ -143,6 +145,7 @@ class AppState extends ChangeNotifier {
     return items;
   }
 
+  /// Finds a habit by id, including archived ones. Null when it is gone.
   Habit? habitById(String id) {
     for (final habit in _habits) {
       if (habit.id == id) return habit;
@@ -150,6 +153,7 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
+  /// Reads the saved snapshot, or plants the sample habits on a first launch.
   Future<void> load() async {
     if (_ready || _loading) return;
     _loading = true;
@@ -191,6 +195,7 @@ class AppState extends ChangeNotifier {
     if (decoded == null) _scheduleSave();
   }
 
+  /// Selects the day shown on Today and remembered for the next launch.
   void selectDate(DateTime day) {
     final next = dateOnly(day);
     if (isSameDay(next, _selectedDate)) return;
@@ -199,29 +204,37 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Stores the bottom-bar tab so the next launch reopens the same page.
   void rememberTab(int index) {
     if (index < 0 || index > 3 || _tab == index) return;
     _tab = index;
+    notifyListeners();
     _scheduleSave();
   }
 
+  /// Folds or opens the Daily Habits list. Listeners rebuild Today.
   void rememberHabitsOpen(bool value) {
     if (_habitsOpen == value) return;
     _habitsOpen = value;
+    notifyListeners();
     _scheduleSave();
   }
 
+  /// Remembers the month the Today strip was showing.
   void rememberTodayMonth(DateTime month) {
     final next = DateTime(month.year, month.month);
     if (isSameMonth(_todayMonth, next)) return;
     _todayMonth = next;
+    notifyListeners();
     _scheduleSave();
   }
 
+  /// Remembers the month open on the Calendar tab.
   void rememberCalendarMonth(DateTime month) {
     final next = DateTime(month.year, month.month);
     if (isSameMonth(_calendarMonth, next)) return;
     _calendarMonth = next;
+    notifyListeners();
     _scheduleSave();
   }
 
@@ -229,16 +242,20 @@ class AppState extends ChangeNotifier {
   void rememberDetail(String? id) {
     if (_detailHabitId == id) return;
     _detailHabitId = id;
+    notifyListeners();
     _scheduleSave();
   }
 
+  /// Remembers the month shown on a habit's own calendar.
   void rememberDetailMonth(DateTime month) {
     final next = DateTime(month.year, month.month);
     if (_detailMonth != null && isSameMonth(_detailMonth!, next)) return;
     _detailMonth = next;
+    notifyListeners();
     _scheduleSave();
   }
 
+  /// Sets Day, Night, or System. Night paints the dark cards from the reference.
   void setAppearance(String value) {
     const allowed = {'system', 'day', 'night'};
     if (!allowed.contains(value) || _appearance == value) return;
@@ -247,23 +264,29 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Switches between the day and night palettes.
   void setNight(bool value) => setAppearance(value ? 'night' : 'day');
 
+  /// Flips the current day or night palette.
   void toggleNight() => setNight(!night);
 
+  /// Folds or opens the To-Do List. Listeners rebuild Today.
   void rememberTodosOpen(bool value) {
     if (_todosOpen == value) return;
     _todosOpen = value;
+    notifyListeners();
     _scheduleSave();
   }
 
+  /// Folds or opens Completed. A finished habit stays hidden until this is true.
   void rememberCompletedOpen(bool value) {
     if (_completedOpen == value) return;
     _completedOpen = value;
+    notifyListeners();
     _scheduleSave();
   }
 
-  /// Weekly or monthly layout for the first page.
+  /// Stores a week or month preference. Today still shows only the week strip.
   void rememberSpan(String value) {
     if (value != 'week' && value != 'month') return;
     if (_span == value && _calendarDefault == 'auto') return;
@@ -273,6 +296,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Settings value for the calendar. Today itself always stays a week strip.
   void setCalendarDefault(String value) {
     const allowed = {'auto', 'week', 'month'};
     if (!allowed.contains(value) || _calendarDefault == value) return;
@@ -281,6 +305,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// 0 starts weeks on Sunday. 1 starts them on Monday.
   void setWeekStart(int value) {
     final next = value == 1 ? 1 : 0;
     if (_weekStart == next) return;
@@ -289,6 +314,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// `default` or `large`. Large scales text by 1.12.
   void setFontSize(String value) {
     final next = value == 'large' ? 'large' : 'default';
     if (_fontSize == next) return;
@@ -297,6 +323,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Stopwatch or countdown, remembered for the timer sheet.
   void setTimerDefault(String value) {
     final next = value == 'countdown' ? 'countdown' : 'stopwatch';
     if (_timerDefault == next) return;
@@ -305,6 +332,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Stores the language choice. The UI copy stays English in this build.
   void setLanguage(String value) {
     final next = value == 'english' ? 'english' : 'default';
     if (_language == next) return;
@@ -313,6 +341,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Keeps the preference locally. No calendar server is contacted.
   void setCalendarSync(bool value) {
     if (_calendarSync == value) return;
     _calendarSync = value;
@@ -320,6 +349,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// When true, the habit plus button opens the logger instead of adding one.
   void setSmartInput(bool value) {
     if (_smartInput == value) return;
     _smartInput = value;
@@ -327,6 +357,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Saves an email on the phone. This does not call Google.
   void signIn(String email) {
     final next = email.trim();
     if (next.isEmpty || !next.contains('@')) return;
@@ -336,6 +367,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Clears the saved email and leaves habits on the device.
   void signOut() {
     if (_accountEmail == null) return;
     _accountEmail = null;
@@ -343,6 +375,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Removes habits, to-dos, and journal lines. Settings stay.
   void deleteBoard() {
     _habits.clear();
     _tasks.clear();
@@ -352,11 +385,16 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Clears the email and the board together.
   void deleteAccount() {
     _accountEmail = null;
     deleteBoard();
   }
 
+  /// Writes [value] for one habit on one day and refreshes that journal line.
+  ///
+  /// Returns false for a future day or an unknown habit. Zero removes the day.
+  /// Reaching the goal is what moves the habit into Completed on Today.
   bool setHabitValue(String id, DateTime day, int value) {
     final today = dateOnly(DateTime.now());
     final target = dateOnly(day);
@@ -384,6 +422,7 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
+  /// Adds [delta] to the amount already logged, then stores the new total.
   bool addHabitValue(String id, DateTime day, int delta) {
     final habit = habitById(id);
     if (habit == null) return false;
@@ -391,6 +430,7 @@ class AppState extends ChangeNotifier {
     return setHabitValue(id, day, next);
   }
 
+  /// Fills a habit to its goal, or clears the day if it was already complete.
   bool toggleHabit(String id, DateTime day) {
     final habit = habitById(id);
     if (habit == null) return false;
@@ -398,12 +438,14 @@ class AppState extends ChangeNotifier {
     return setHabitValue(id, day, done ? 0 : habit.goal);
   }
 
+  /// Appends a new habit and shows it in Daily Habits.
   void addHabit(Habit habit) {
     _habits.add(habit);
     notifyListeners();
     _scheduleSave();
   }
 
+  /// Changes name, goal, color, and unit. The log and archive flag stay.
   void updateHabit(Habit habit) {
     final index = _habits.indexWhere((item) => item.id == habit.id);
     if (index < 0) return;
@@ -416,6 +458,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Deletes the habit and every journal line that belongs to it.
   void deleteHabit(String id) {
     _habits.removeWhere((habit) => habit.id == id);
     _journal.removeWhere((entry) => entry.habitId == id);
@@ -424,6 +467,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Hides a habit from Today without deleting its history.
   void setArchived(String id, bool archived) {
     final index = _habits.indexWhere((habit) => habit.id == id);
     if (index < 0 || _habits[index].archived == archived) return;
@@ -433,6 +477,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Adds a free-text journal note that is not tied to a habit.
   void addNote(String title, DateTime at) {
     final text = title.trim();
     if (text.isEmpty) return;
@@ -450,6 +495,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Removes one journal row. The habit log that created it is left as-is.
   void deleteJournal(String id) {
     final before = _journal.length;
     _journal.removeWhere((entry) => entry.id == id);
@@ -458,12 +504,14 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Adds a to-do. It shows on Today when its due day is selected.
   void addTask(TaskItem task) {
     _tasks.add(task);
     notifyListeners();
     _scheduleSave();
   }
 
+  /// Edits a to-do and keeps the minutes already stored for the calendar.
   void updateTask(TaskItem task) {
     final index = _tasks.indexWhere((item) => item.id == task.id);
     if (index < 0) return;
@@ -472,6 +520,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Checks or unchecks a to-do.
   void toggleTask(String id) {
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index < 0) return;
@@ -481,12 +530,14 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Removes one to-do.
   void deleteTask(String id) {
     _tasks.removeWhere((task) => task.id == id);
     notifyListeners();
     _scheduleSave();
   }
 
+  /// Moves every overdue, still-open to-do onto [day].
   void postponeOverdueTo(DateTime day) {
     final today = dateOnly(DateTime.now());
     final target = dateOnly(day);
@@ -502,6 +553,7 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Changes one to-do's due day.
   void postponeTask(String id, DateTime day) {
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index < 0) return;
@@ -510,23 +562,28 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
+  /// Builds a local id from the clock and a counter. No server is involved.
   String createId() {
     _idSequence += 1;
     return '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}$_idSequence';
   }
 
+  /// Queues a write so rapid taps do not overlap on disk.
   void _scheduleSave() {
     if (!_ready) return;
     _queue = _queue.then((_) => _write());
   }
 
+  /// Writes the whole snapshot into shared preferences under [storageKey].
   Future<void> _write() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(storageKey, jsonEncode(_snapshot()));
   }
 
+  /// JSON copy of habits, tasks, journal, settings, and the open page.
   String exportJson() => jsonEncode(_snapshot());
 
+  /// One map of everything that must survive a restart.
   Map<String, dynamic> _snapshot() {
     return {
       'night': night,
@@ -559,6 +616,7 @@ class AppState extends ChangeNotifier {
     };
   }
 
+  /// Rewrites the journal line for this habit and day to match the new amount.
   void _replaceJournal({
     required String habitId,
     required String title,
@@ -585,6 +643,7 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  /// Restores settings, ignoring values this build does not understand.
   void _applySettings(Map<String, dynamic>? settings) {
     if (settings == null) return;
     final appearance = settings['appearance'];
@@ -623,6 +682,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Restores the open tab, selected day, and which sections were folded.
   void _applySession(Map<String, dynamic>? session) {
     if (session == null) return;
     final tab = session['tab'];
@@ -656,6 +716,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Parses stored JSON. A broken file returns null so the seed data is used.
   static _Decoded? _decode(String raw) {
     try {
       final value = jsonDecode(raw);
@@ -704,6 +765,7 @@ class AppState extends ChangeNotifier {
   }
 }
 
+/// Amount logged on [day], or zero when that day has no entry.
 int valueOnSafe(Habit habit, DateTime day) => habit.log[dateKey(day)] ?? 0;
 
 class _Decoded {

@@ -20,6 +20,7 @@ class JournalEntry {
   final DateTime at;
   final int colorValue;
 
+  /// Map written into the on-device snapshot.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -32,6 +33,7 @@ class JournalEntry {
     };
   }
 
+  /// Builds a journal line from stored JSON, or null when it is incomplete.
   static JournalEntry? tryParse(dynamic raw) {
     if (raw is! Map) return null;
     final id = raw['id'];
@@ -58,6 +60,7 @@ class JournalEntry {
   }
 }
 
+/// Clock label for a journal row, such as `Oct 19, 08:26`.
 String journalWhen(DateTime at) {
   final hour = at.hour.toString().padLeft(2, '0');
   final minute = at.minute.toString().padLeft(2, '0');

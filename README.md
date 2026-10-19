@@ -32,7 +32,9 @@ Check what is missing with:
 flutter doctor
 ```
 
-Each habit and each to-do is its own item. Habits are checked per day. To-dos have a due date. A bottom bar stays on every screen: Today, Journal, Calendar, and Settings. The side menu on every page switches Today between a week and a month. After the first launch, the phone remembers the day, that choice, each page, and which habit you had open.
+Each habit and each to-do is its own item. Habits are checked per day. To-dos have a due date. A bottom bar stays on every screen: Today, Journal, Calendar, and Settings. Today keeps a seven-day strip. The month grid is only on Calendar. A habit that reaches its goal for the selected day leaves Daily Habits and sits in Completed, which opens and closes from its header. After the first launch, the phone remembers the day, each page, and which habit you had open.
+
+Versions use semantic versioning in `pubspec.yaml` (`MAJOR.MINOR.PATCH+build`) and the same name in `lib/app_version.dart`. Raise PATCH for a fix, MINOR for a new behavior, and the build number on every installable Android file.
 
 ## What you can do
 

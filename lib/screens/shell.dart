@@ -28,6 +28,7 @@ class _ShellState extends State<Shell> {
   bool _picking = false;
   bool _sessionApplied = false;
 
+  /// Switches the bottom bar and closes any page that was covering the tabs.
   void _setTab(int index) {
     setState(() {
       _tab = index;
@@ -41,6 +42,7 @@ class _ShellState extends State<Shell> {
     state.rememberDetail(null);
   }
 
+  /// Opens one habit's detail page and remembers it for the next launch.
   void _openHabit(String id) {
     setState(() {
       _detailId = id;
@@ -50,18 +52,14 @@ class _ShellState extends State<Shell> {
     AppScope.of(context).rememberDetail(id);
   }
 
+  /// Leaves the habit page and returns to the tab underneath.
   void _closeHabit() {
     setState(() => _detailId = null);
     AppScope.of(context).rememberDetail(null);
   }
 
+  /// Opens the side menu.
   void _openMenu() => _scaffoldKey.currentState?.openDrawer();
-
-  void _showToday(String span) {
-    AppScope.of(context).rememberSpan(span);
-    Navigator.pop(context);
-    _setTab(0);
-  }
 
   @override
   void didChangeDependencies() {
@@ -122,9 +120,7 @@ class _ShellState extends State<Shell> {
         key: _scaffoldKey,
         resizeToAvoidBottomInset: false,
         drawer: _AppDrawer(
-          span: state.todaySpan,
           appearance: state.appearance,
-          onSpan: _showToday,
           onAppearance: state.setAppearance,
         ),
         floatingActionButton: overlay || _picking || _tab == 3
@@ -287,15 +283,11 @@ class _NavButton extends StatelessWidget {
 
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
-    required this.span,
     required this.appearance,
-    required this.onSpan,
     required this.onAppearance,
   });
 
-  final String span;
   final String appearance;
-  final ValueChanged<String> onSpan;
   final ValueChanged<String> onAppearance;
 
   @override
@@ -310,7 +302,7 @@ class _AppDrawer extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'First page',
+                'Habit Tracker',
                 style: TextStyle(
                   color: colors.ink,
                   fontSize: 26,
@@ -320,16 +312,8 @@ class _AppDrawer extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'Weekly or monthly changes the day picker on Today.',
+                'Today keeps one week across the top. The month grid is on Calendar.',
                 style: TextStyle(color: colors.muted, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 18),
-              _ChoiceRow(
-                left: 'Weekly',
-                right: 'Monthly',
-                leftOn: span != 'month',
-                onLeft: () => onSpan('week'),
-                onRight: () => onSpan('month'),
               ),
               const SizedBox(height: 22),
               Text(
@@ -399,57 +383,3 @@ class _AppDrawer extends StatelessWidget {
   }
 }
 
-class _ChoiceRow extends StatelessWidget {
-  const _ChoiceRow({
-    required this.left,
-    required this.right,
-    required this.leftOn,
-    required this.onLeft,
-    required this.onRight,
-  });
-
-  final String left;
-  final String right;
-  final bool leftOn;
-  final VoidCallback onLeft;
-  final VoidCallback onRight;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: colors.chip,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          _side(colors, left, leftOn, onLeft),
-          _side(colors, right, !leftOn, onRight),
-        ],
-      ),
-    );
-  }
-
-  Widget _side(AppColors colors, String label, bool selected, VoidCallback onTap) {
-    return Expanded(
-      child: Material(
-        color: selected ? colors.card : Colors.transparent,
-        borderRadius: BorderRadius.circular(11),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(11),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: colors.ink, fontWeight: FontWeight.w800),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:habit_tracker/main.dart';
+import 'package:habit_tracker/models/habit.dart';
 import 'package:habit_tracker/state/app_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -105,10 +106,54 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Menu'));
     await tester.pumpAndSettle();
-    expect(find.text('Monthly'), findsOneWidget);
-    await tester.tap(find.text('Monthly'));
+    expect(find.text('Monthly'), findsNothing);
+    expect(find.textContaining('seven days'), findsNothing);
+    expect(
+      find.textContaining('Today keeps one week across the top'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a finished habit drops into Completed and the section folds', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState.withData(
+      habits: [
+        Habit(
+          id: 'wake',
+          name: 'Wake Up Early',
+          colorValue: 0xFFF6D452,
+          kind: HabitKind.check,
+          goal: 1,
+          unit: 'time',
+          createdAt: DateTime(2026, 10, 19),
+        ),
+      ],
+    );
+    await tester.pumpWidget(HabitTrackerApp(state: state));
     await tester.pumpAndSettle();
-    expect(find.text('To-Do List'), findsOneWidget);
-    expect(state.todaySpan, 'month');
+
+    expect(find.text('Wake Up Early'), findsOneWidget);
+    expect(find.text('0 / 1 time'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.add_rounded).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Wake Up Early'), findsNothing);
+    expect(find.text('1 / 1 time'), findsNothing);
+
+    await tester.tap(find.text('Completed'));
+    await tester.pumpAndSettle();
+    expect(find.text('Wake Up Early'), findsOneWidget);
+    expect(find.text('1 / 1 time'), findsOneWidget);
+
+    await tester.tap(find.text('Completed'));
+    await tester.pumpAndSettle();
+    expect(find.text('Wake Up Early'), findsNothing);
   });
 }

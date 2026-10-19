@@ -12,6 +12,7 @@ import '../widgets/page_header.dart';
 import '../widgets/sheets.dart';
 import '../widgets/timer_sheet.dart';
 
+/// First page: one week of days, then to-dos, open habits, and finished habits.
 class TodayScreen extends StatefulWidget {
   const TodayScreen({
     super.key,
@@ -54,6 +55,7 @@ class _TodayScreenState extends State<TodayScreen> {
     super.dispose();
   }
 
+  /// Keeps the remembered month aligned when another page changes the day.
   void _onState() {
     if (!mounted || _state == null) return;
     final selected = _state!.selectedDate;
@@ -65,12 +67,14 @@ class _TodayScreenState extends State<TodayScreen> {
     }
   }
 
+  /// Tells the user a future day cannot be logged yet.
   void _blocked() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('You can log a habit once that day arrives.')),
     );
   }
 
+  /// Moves an overdue to-do to today, tomorrow, next week, or a picked day.
   Future<void> _postpone(TaskItem task) async {
     final state = AppScope.of(context);
     final today = dateOnly(DateTime.now());
@@ -158,13 +162,10 @@ class _TodayScreenState extends State<TodayScreen> {
             key: const ValueKey('today-list'),
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
             children: [
-              _DateSwitcher(
+              _WeekStrip(
                 selected: selected,
-                monthly: state.todaySpan == 'month',
                 weekStart: state.weekStart,
-                month: state.todayMonth,
                 onSelect: state.selectDate,
-                onMonth: state.rememberTodayMonth,
               ),
               const SizedBox(height: 16),
               _SectionTitle(
@@ -254,6 +255,7 @@ class _TodayScreenState extends State<TodayScreen> {
     );
   }
 
+  /// To-dos due on the selected day. Today's list also includes overdue items.
   List<TaskItem> _tasksFor(AppState state, DateTime selected, DateTime today) {
     final viewingToday = isSameDay(selected, today);
     final items = state.tasks.where((task) {
@@ -268,122 +270,43 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 }
 
-class _DateSwitcher extends StatelessWidget {
-  const _DateSwitcher({
+/// Seven day pills for the week that contains the selected day.
+///
+/// This stays a single week. The full month grid lives on the Calendar tab,
+/// so Today does not grow into a second calendar.
+class _WeekStrip extends StatelessWidget {
+  const _WeekStrip({
     required this.selected,
-    required this.monthly,
     required this.weekStart,
-    required this.month,
     required this.onSelect,
-    required this.onMonth,
   });
 
   final DateTime selected;
-  final bool monthly;
   final int weekStart;
-  final DateTime month;
   final ValueChanged<DateTime> onSelect;
-  final ValueChanged<DateTime> onMonth;
 
   @override
   Widget build(BuildContext context) {
-    if (monthly) return _monthGrid(context);
-    return _weekRow(context);
-  }
-
-  Widget _weekRow(BuildContext context) {
     final start = startOfWeek(selected, weekStart: weekStart);
-    final days = [for (var i = 0; i < 7; i++) start.add(Duration(days: i))];
     return Row(
       children: [
-        for (final day in days)
+        for (var i = 0; i < 7; i++)
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: _DayPill(
-                day: day,
-                selected: isSameDay(day, selected),
-                onTap: () => onSelect(day),
+                day: start.add(Duration(days: i)),
+                selected: isSameDay(start.add(Duration(days: i)), selected),
+                onTap: () => onSelect(start.add(Duration(days: i))),
               ),
             ),
           ),
       ],
     );
   }
-
-  Widget _monthGrid(BuildContext context) {
-    final colors = AppColors.of(context);
-    final first = DateTime(month.year, month.month, 1);
-    final lead = (sundayIndex(first) - (weekStart == 1 ? 1 : 0) + 7) % 7;
-    final count = daysInMonth(month.year, month.month);
-    final labels = weekStart == 1
-        ? const ['M', 'T', 'W', 'Th', 'F', 'S', 'Su']
-        : const ['Su', 'M', 'T', 'W', 'Th', 'F', 'S'];
-    return Column(
-      children: [
-        Row(
-          children: [
-            IconButton(
-              tooltip: 'Previous month',
-              onPressed: () => onMonth(DateTime(month.year, month.month - 1)),
-              icon: const Icon(Icons.chevron_left_rounded),
-            ),
-            Expanded(
-              child: Text(
-                monthYearLabel(month),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: colors.ink,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Next month',
-              onPressed: () => onMonth(DateTime(month.year, month.month + 1)),
-              icon: const Icon(Icons.chevron_right_rounded),
-            ),
-          ],
-        ),
-        Row(
-          children: [
-            for (final label in labels)
-              Expanded(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: colors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        GridView.count(
-          crossAxisCount: 7,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          childAspectRatio: 0.7,
-          children: [
-            for (var i = 0; i < lead; i++) const SizedBox.shrink(),
-            for (var day = 1; day <= count; day++)
-              _DayPill(
-                day: DateTime(month.year, month.month, day),
-                selected: isSameDay(DateTime(month.year, month.month, day), selected),
-                onTap: () => onSelect(DateTime(month.year, month.month, day)),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
 }
 
+/// One day in the week strip. The selected day uses the lighter card.
 class _DayPill extends StatelessWidget {
   const _DayPill({
     required this.day,
@@ -439,6 +362,7 @@ class _DayPill extends StatelessWidget {
   }
 }
 
+/// Header that folds its section up or down. Completed uses the chevron.
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({
     required this.icon,
@@ -500,6 +424,7 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+/// How many of today's habits are already finished, drawn as a small ring.
 class _MiniRing extends StatelessWidget {
   const _MiniRing({required this.progress});
 
@@ -521,6 +446,7 @@ class _MiniRing extends StatelessWidget {
   }
 }
 
+/// Short line shown when a section has nothing to list.
 class _EmptyLine extends StatelessWidget {
   const _EmptyLine({required this.text});
 
@@ -541,6 +467,7 @@ class _EmptyLine extends StatelessWidget {
   }
 }
 
+/// One to-do. Tapping the row checks it. Overdue rows can be postponed.
 class _TodoRow extends StatelessWidget {
   const _TodoRow({
     required this.task,
@@ -600,6 +527,10 @@ class _TodoRow extends StatelessWidget {
   }
 }
 
+/// Habit card for the selected day, including that week's seven mini bars.
+///
+/// A habit whose logged amount has reached its goal is not built here for
+/// Daily Habits. The page places those cards in Completed instead.
 class _HabitTile extends StatelessWidget {
   const _HabitTile({
     required this.habit,
@@ -704,6 +635,7 @@ class _HabitTile extends StatelessWidget {
   }
 }
 
+/// Plus adds one unit. A large goal opens the logger. A finished habit clears.
 class _Action extends StatelessWidget {
   const _Action({
     required this.done,
@@ -752,6 +684,7 @@ class _Action extends StatelessWidget {
   }
 }
 
+/// One day's fill inside a habit card, from empty up to the daily goal.
 class _DayBar extends StatelessWidget {
   const _DayBar({required this.day, required this.ratio, required this.color});
 

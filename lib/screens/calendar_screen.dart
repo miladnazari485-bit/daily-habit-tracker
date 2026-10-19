@@ -9,6 +9,7 @@ import '../widgets/app_scope.dart';
 import '../widgets/page_header.dart';
 import '../widgets/sheets.dart';
 
+/// Week view of colored habit and to-do blocks. The month grid stays on this tab.
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({
     super.key,
@@ -43,12 +44,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _anchor = DateTime(saved.year, saved.month, 1);
   }
 
+  /// Moves the colored week forward or back and remembers that month.
   void _shiftWeek(int delta) {
     final next = _anchor.add(Duration(days: 7 * delta));
     setState(() => _anchor = next);
     AppScope.of(context).rememberCalendarMonth(DateTime(next.year, next.month));
   }
 
+  /// Jumps the calendar back to the current week.
   void _jumpToday() {
     final today = dateOnly(DateTime.now());
     setState(() => _anchor = today);
@@ -224,6 +227,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return blocks;
   }
 
+  /// Minute of day for a habit block, taken from its journal line when one exists.
   int _journalMinutes(AppState state, Habit habit, DateTime day) {
     for (final entry in state.journal) {
       if (entry.habitId == habit.id && isSameDay(entry.at, day)) {
@@ -233,6 +237,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return 7 * 60 + (habit.name.hashCode.abs() % 180);
   }
 
+  /// Menu for jumping to today or opening the selected day on Today.
   Future<void> _more(BuildContext context) async {
     final colors = AppColors.of(context);
     final choice = await showModalBottomSheet<String>(

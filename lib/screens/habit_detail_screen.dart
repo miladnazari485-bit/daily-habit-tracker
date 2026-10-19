@@ -8,6 +8,7 @@ import '../widgets/app_scope.dart';
 import '../widgets/habit_card.dart';
 import '../widgets/sheets.dart';
 
+/// One habit's month, streak, and archive controls.
 class HabitDetailScreen extends StatefulWidget {
   const HabitDetailScreen({
     super.key,
@@ -45,12 +46,14 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
     _aligned = true;
   }
 
+  /// Steps the habit's month grid and remembers it for the next visit.
   void _shiftMonth(int delta) {
     final month = DateTime(_month.year, _month.month + delta);
     setState(() => _month = month);
     AppScope.of(context).rememberDetailMonth(month);
   }
 
+  /// Opens the logger for one past or present day on this habit.
   Future<void> _editDay(Habit habit, DateTime day) async {
     final today = dateOnly(DateTime.now());
     if (day.isAfter(today)) {

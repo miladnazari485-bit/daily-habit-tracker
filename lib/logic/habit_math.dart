@@ -1,12 +1,17 @@
 import '../models/habit.dart';
 import 'dates.dart';
 
+/// Amount logged for [day]. A day with no entry counts as zero.
 int valueOn(Habit habit, DateTime day) => habit.log[dateKey(day)] ?? 0;
 
+/// True once [day] has reached the habit's goal.
+///
+/// Today uses this to move the card out of Daily Habits and into Completed.
 bool isComplete(Habit habit, DateTime day) {
   return habit.goal > 0 && valueOn(habit, day) >= habit.goal;
 }
 
+/// Fraction of the goal finished on [day], clamped to 0–1 for the week bars.
 double ratioOn(Habit habit, DateTime day) {
   if (habit.goal <= 0) return 0;
   final ratio = valueOn(habit, day) / habit.goal;
@@ -31,6 +36,7 @@ int currentStreak(Habit habit, DateTime today) {
   return streak;
 }
 
+/// Longest run of completed days from the first log through [today].
 int bestStreak(Habit habit, DateTime today) {
   if (habit.log.isEmpty) return 0;
   DateTime? earliest;
@@ -56,6 +62,7 @@ int bestStreak(Habit habit, DateTime today) {
   return best;
 }
 
+/// Text such as `0 / 6 liters` for the habit card.
 String progressLabel(Habit habit, DateTime day) {
   return '${formatInt(valueOn(habit, day))} / ${formatInt(habit.goal)} ${habit.unit}';
 }
@@ -76,16 +83,19 @@ double monthRate(Habit habit, DateTime month, DateTime today) {
   return done / counted;
 }
 
+/// Share of [habits] that already met their goal on [day].
 double dayRate(List<Habit> habits, DateTime day) {
   if (habits.isEmpty) return 0;
   final done = habits.where((habit) => isComplete(habit, day)).length;
   return done / habits.length;
 }
 
+/// How many habits are still sitting in Daily Habits for [day].
 int incompleteCount(List<Habit> habits, DateTime day) {
   return habits.where((habit) => !isComplete(habit, day)).length;
 }
 
+/// One ratio per day, oldest first, ending on [end]. Used by the heatmap.
 List<double> heatmapRatios(Habit habit, DateTime end, int count) {
   final last = dateOnly(end);
   return List<double>.generate(count, (index) {

@@ -24,6 +24,7 @@ class Habit {
   final bool archived;
   final Map<String, int> log;
 
+  /// Returns a copy with the given fields replaced. Omitted fields stay.
   Habit copyWith({
     String? id,
     String? name,
@@ -48,6 +49,7 @@ class Habit {
     );
   }
 
+  /// Map written into the on-device snapshot.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -62,6 +64,7 @@ class Habit {
     };
   }
 
+  /// Builds a habit from stored JSON, or null when required fields are missing.
   static Habit? tryParse(dynamic raw) {
     if (raw is! Map) return null;
     final id = raw['id'];
@@ -91,6 +94,7 @@ class Habit {
     );
   }
 
+  /// Keeps only positive day amounts. Bad entries are dropped.
   static Map<String, int> _readLog(dynamic raw) {
     if (raw is! Map) return const {};
     final log = <String, int>{};

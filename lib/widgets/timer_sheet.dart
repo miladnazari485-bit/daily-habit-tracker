@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'app_scope.dart';
 
+/// Opens the stopwatch or countdown chosen in Settings.
 Future<void> showTimerSheet(BuildContext context) {
   final colors = AppColors.of(context);
   final countdown = AppScope.of(context).timerDefault == 'countdown';
@@ -39,6 +40,7 @@ class _TimerSheetState extends State<_TimerSheet> {
     super.dispose();
   }
 
+  /// Starts the clock and ticks the label once a second.
   void _start() {
     _watch.start();
     _ticker ??= Timer.periodic(const Duration(seconds: 1), (_) {
@@ -53,6 +55,7 @@ class _TimerSheetState extends State<_TimerSheet> {
     setState(() {});
   }
 
+  /// Stops the clock without clearing the elapsed time.
   void _pause() {
     _watch.stop();
     _ticker?.cancel();
@@ -60,6 +63,7 @@ class _TimerSheetState extends State<_TimerSheet> {
     setState(() {});
   }
 
+  /// Clears the clock back to zero.
   void _reset() {
     _watch
       ..stop()
@@ -69,6 +73,7 @@ class _TimerSheetState extends State<_TimerSheet> {
     setState(() => _elapsed = 0);
   }
 
+  /// Formats seconds as `mm:ss`.
   String _clock(int seconds) {
     final safe = seconds < 0 ? 0 : seconds;
     final minutes = (safe ~/ 60).toString().padLeft(2, '0');

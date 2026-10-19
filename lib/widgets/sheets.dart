@@ -10,6 +10,7 @@ import 'app_scope.dart';
 
 enum ComposerKind { chooser, habit, task }
 
+/// Opens the sheet for a new habit, a new to-do, or an edit of either.
 Future<void> showComposer(
   BuildContext context, {
   ComposerKind kind = ComposerKind.chooser,
@@ -35,6 +36,7 @@ Future<void> showComposer(
   );
 }
 
+/// Opens the amount logger for one habit on one day.
 Future<void> showLogSheet(
   BuildContext context, {
   required Habit habit,
@@ -465,6 +467,7 @@ class _ComposerState extends State<_Composer> {
     );
   }
 
+  /// Raises or lowers the goal by one, staying inside 1 to 1,000,000.
   void _bumpGoal(int direction) {
     final current = int.tryParse(_goal.text) ?? 1;
     final step = current >= 500 ? 500 : 1;
@@ -483,6 +486,7 @@ class _ComposerState extends State<_Composer> {
     setState(() => _due = dateOnly(picked));
   }
 
+  /// Writes the habit or to-do from the form, keeping history on an edit.
   void _save() {
     final state = AppScope.of(context);
     final name = _name.text.trim();
@@ -697,6 +701,7 @@ class _LogSheetState extends State<_LogSheet> {
     );
   }
 
+  /// Step size for the logger. Large goals move by 500.
   int _step(Habit habit) => habit.goal >= 100 ? 500 : 1;
 
   List<int> _quickAdds(Habit habit) {
@@ -705,12 +710,14 @@ class _LogSheetState extends State<_LogSheet> {
     return const [];
   }
 
+  /// Adds or subtracts one step and stores it immediately.
   void _apply(Habit habit, int delta) {
     final current = int.tryParse(_amount.text) ?? 0;
     final next = (current + delta).clamp(0, 1000000);
     setState(() => _amount.text = '$next');
   }
 
+  /// Stores the typed amount and closes the sheet.
   void _commit(Habit habit) {
     final value = int.tryParse(_amount.text) ?? 0;
     final ok = AppScope.of(context).setHabitValue(habit.id, widget.day, value);
@@ -721,6 +728,7 @@ class _LogSheetState extends State<_LogSheet> {
     Navigator.pop(context);
   }
 
+  /// Tells the user a future day cannot be logged yet.
   void _blocked() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(

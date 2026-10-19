@@ -8,6 +8,7 @@ import '../widgets/habit_card.dart';
 import '../widgets/page_header.dart';
 import '../widgets/sheets.dart';
 
+/// List of habit logs and notes, newest first, with search and filters.
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key, required this.onMenu});
 

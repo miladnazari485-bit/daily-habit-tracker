@@ -1,9 +1,11 @@
 // Calendar helpers that stay independent of Flutter so they can be tested
 // as plain Dart.
 
+/// Drops the clock so two moments on the same civil day compare equal.
 DateTime dateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);
 
+/// Storage key for one day, `yyyy-MM-dd`, shared by habits, tasks, and logs.
 String dateKey(DateTime value) {
   final day = dateOnly(value);
   final month = day.month.toString().padLeft(2, '0');
@@ -11,11 +13,13 @@ String dateKey(DateTime value) {
   return '${day.year}-$month-$dayText';
 }
 
+/// Storage key for a month, `yyyy-MM`.
 String monthKey(DateTime value) {
   final month = value.month.toString().padLeft(2, '0');
   return '${value.year}-$month';
 }
 
+/// Reads a `yyyy-MM` key. Returns null when the text is not a real month.
 DateTime? tryParseMonthKey(String key) {
   final parts = key.split('-');
   if (parts.length != 2) return null;
@@ -25,6 +29,7 @@ DateTime? tryParseMonthKey(String key) {
   return DateTime(year, month);
 }
 
+/// Reads a `yyyy-MM-dd` key. Returns null for a day that does not exist.
 DateTime? tryParseDateKey(String key) {
   final parts = key.split('-');
   if (parts.length != 3) return null;
@@ -40,19 +45,25 @@ DateTime? tryParseDateKey(String key) {
   return parsed;
 }
 
+/// True when [a] and [b] fall on the same civil day.
 bool isSameDay(DateTime a, DateTime b) {
   return a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
+/// True when [a] and [b] fall in the same calendar month.
 bool isSameMonth(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month;
 
+/// Number of days in [month], including leap-year February.
 int daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
 
 /// Sunday is 0, matching the week strip in the app.
 int sundayIndex(DateTime day) => day.weekday % 7;
 
-/// First day of the week that contains [day]. [weekStart] 0 is Sunday.
+/// First day of the week that contains [day].
+///
+/// [weekStart] 0 is Sunday, which is the Today strip in the reference.
+/// 1 is Monday, chosen from Settings.
 DateTime startOfWeek(DateTime day, {int weekStart = 0}) {
   final date = dateOnly(day);
   final start = weekStart == 1 ? 1 : 0;
@@ -102,15 +113,19 @@ const monthLong = [
   'December',
 ];
 
+/// Short label such as `Oct 19`.
 String shortMonthDay(DateTime day) => '${monthShort[day.month - 1]} ${day.day}';
 
+/// Label such as `October 2026`, used on the Calendar tab.
 String monthYearLabel(DateTime day) =>
     '${monthLong[day.month - 1]} ${day.year}';
 
+/// Label such as `Sunday, October 19`.
 String longDateLabel(DateTime day) {
   return '${weekdayLong[sundayIndex(day)]}, ${monthLong[day.month - 1]} ${day.day}';
 }
 
+/// Adds thousands separators so 10000 reads as `10,000`.
 String formatInt(int value) {
   final negative = value < 0;
   final digits = value.abs().toString();
@@ -122,6 +137,7 @@ String formatInt(int value) {
   return negative ? '-$buffer' : buffer.toString();
 }
 
+/// True on Saturday and Sunday.
 bool isWeekend(DateTime day) {
   return day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 }

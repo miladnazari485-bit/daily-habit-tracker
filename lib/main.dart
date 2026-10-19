@@ -8,6 +8,7 @@ import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_scope.dart';
 
+/// Starts the app, loads the saved board, and paints edge to edge.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -16,6 +17,7 @@ Future<void> main() async {
   runApp(HabitTrackerApp(state: state));
 }
 
+/// Root widget. Holds [AppState] and switches day and night from settings.
 class HabitTrackerApp extends StatefulWidget {
   const HabitTrackerApp({super.key, required this.state});
 

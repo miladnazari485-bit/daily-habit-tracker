@@ -18,10 +18,12 @@ class TaskItem {
   /// Minutes from midnight, used to place the task on the calendar.
   final int minutes;
 
+  /// True when the to-do is still open and its due day is before [today].
   bool isOverdueOn(DateTime today) {
     return !done && dueDate.isBefore(dateOnly(today));
   }
 
+  /// Returns a copy with the given fields replaced.
   TaskItem copyWith({
     String? id,
     String? title,
@@ -38,6 +40,7 @@ class TaskItem {
     );
   }
 
+  /// Map written into the on-device snapshot.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -48,6 +51,7 @@ class TaskItem {
     };
   }
 
+  /// Builds a to-do from stored JSON, or null when the due day is invalid.
   static TaskItem? tryParse(dynamic raw) {
     if (raw is! Map) return null;
     final id = raw['id'];

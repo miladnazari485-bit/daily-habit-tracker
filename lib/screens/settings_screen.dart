@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../app_version.dart';
 import '../logic/habit_math.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_scope.dart';
 import '../widgets/page_header.dart';
 import '../widgets/sheets.dart';
 
+/// Appearance, week start, archive, export, and the on-device account.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({
     super.key,
@@ -170,14 +172,11 @@ class SettingsScreen extends StatelessWidget {
               ),
               _Row(
                 title: 'Calendar Default',
-                value: _calendarLabel(state.calendarDefault),
-                onTap: () => _choose(
+                value: 'Week',
+                onTap: () => _info(
                   context,
-                  'Calendar default',
-                  const ['Auto', 'Week', 'Month'],
-                  (choice) {
-                    state.setCalendarDefault(choice.toLowerCase());
-                  },
+                  'Calendar',
+                  'Today always shows the seven days of the current week. Open the Calendar tab for the month and the colored time grid.',
                 ),
               ),
               _Row(
@@ -371,7 +370,7 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              const _QuietButton(label: 'Habit Tracker Version 1.2.1'),
+              _QuietButton(label: 'Habit Tracker Version $appVersionName'),
               const SizedBox(height: 12),
               Material(
                 color: const Color(0xFFC7B6F2),
@@ -424,17 +423,6 @@ String _appearanceLabel(String value) {
       return 'Night';
     default:
       return 'System';
-  }
-}
-
-String _calendarLabel(String value) {
-  switch (value) {
-    case 'week':
-      return 'Week';
-    case 'month':
-      return 'Month';
-    default:
-      return 'Auto';
   }
 }
 

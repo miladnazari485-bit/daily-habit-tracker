@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_scope.dart';
 import '../widgets/sheets.dart';
 
+/// Suggested habits the user can add without typing a name.
 class HabitPickerScreen extends StatefulWidget {
   const HabitPickerScreen({super.key, required this.onClose});
 
@@ -122,6 +123,7 @@ class _HabitPickerScreenState extends State<HabitPickerScreen> {
     );
   }
 
+  /// True when the group has a suggestion matching the search text.
   bool _visible(HabitGroup group, String query) {
     if (query.isEmpty) return true;
     return group.suggestions.any(
@@ -129,6 +131,7 @@ class _HabitPickerScreenState extends State<HabitPickerScreen> {
     );
   }
 
+  /// Adds the suggestion, or restores it when that name was archived.
   void _add(HabitSuggestion suggestion) {
     final state = AppScope.of(context);
     final existing = state.habits.where(
