@@ -407,7 +407,11 @@ class AppState extends ChangeNotifier {
   void updateHabit(Habit habit) {
     final index = _habits.indexWhere((item) => item.id == habit.id);
     if (index < 0) return;
-    _habits[index] = habit.copyWith(log: _habits[index].log);
+    final current = _habits[index];
+    _habits[index] = habit.copyWith(
+      log: current.log,
+      archived: current.archived,
+    );
     notifyListeners();
     _scheduleSave();
   }
@@ -463,7 +467,7 @@ class AppState extends ChangeNotifier {
   void updateTask(TaskItem task) {
     final index = _tasks.indexWhere((item) => item.id == task.id);
     if (index < 0) return;
-    _tasks[index] = task;
+    _tasks[index] = task.copyWith(minutes: _tasks[index].minutes);
     notifyListeners();
     _scheduleSave();
   }

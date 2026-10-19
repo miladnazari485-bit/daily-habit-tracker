@@ -168,6 +168,52 @@ void main() {
     expect(isSameMonth(state.detailMonth!, DateTime(2026, 4)), isTrue);
   });
 
+  test('editing a habit or task keeps its history and calendar time', () {
+    final today = DateTime(2026, 10, 17);
+    final state = AppState.withData(
+      habits: [
+        Habit(
+          id: 'wake',
+          name: 'Wake Up Early',
+          colorValue: 0xFFF6D452,
+          kind: HabitKind.check,
+          goal: 1,
+          unit: 'time',
+          createdAt: today,
+          archived: true,
+          log: {dateKey(today): 1},
+        ),
+      ],
+      tasks: [
+        TaskItem(
+          id: 'groceries',
+          title: 'Buy groceries',
+          dueDate: today,
+          minutes: 30,
+        ),
+      ],
+    );
+    state.updateHabit(
+      Habit(
+        id: 'wake',
+        name: 'Wake Early',
+        colorValue: 0xFFF6D452,
+        kind: HabitKind.check,
+        goal: 1,
+        unit: 'time',
+        createdAt: today,
+      ),
+    );
+    state.updateTask(
+      TaskItem(id: 'groceries', title: 'Buy fruit', dueDate: today),
+    );
+    expect(state.habitById('wake')!.archived, isTrue);
+    expect(state.habitById('wake')!.log[dateKey(today)], 1);
+    expect(state.habitById('wake')!.name, 'Wake Early');
+    expect(state.tasks.single.minutes, 30);
+    expect(state.tasks.single.title, 'Buy fruit');
+  });
+
   test('a habit log is written into the journal and survives reload', () async {
     final first = AppState();
     await first.load();

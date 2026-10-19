@@ -157,10 +157,11 @@ class _HabitPickerScreenState extends State<HabitPickerScreen> {
         createdAt: DateTime.now(),
       ),
     );
-    widget.onClose();
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
       SnackBar(content: Text('${suggestion.name} was added.')),
     );
+    widget.onClose();
   }
 }
 

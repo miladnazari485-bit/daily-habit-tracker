@@ -497,6 +497,7 @@ class _ComposerState extends State<_Composer> {
         title: name,
         dueDate: _due,
         done: existing?.done ?? false,
+        minutes: existing?.minutes ?? 9 * 60,
       );
       if (existing == null) {
         state.addTask(task);
@@ -525,6 +526,7 @@ class _ComposerState extends State<_Composer> {
       goal: goal,
       unit: unit,
       createdAt: existing?.createdAt ?? DateTime.now(),
+      archived: existing?.archived ?? false,
       log: existing?.log,
     );
     if (existing == null) {

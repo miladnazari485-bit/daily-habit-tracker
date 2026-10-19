@@ -371,7 +371,7 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              const _QuietButton(label: 'Habit Tracker Version 1.2.0'),
+              const _QuietButton(label: 'Habit Tracker Version 1.2.1'),
               const SizedBox(height: 12),
               Material(
                 color: const Color(0xFFC7B6F2),
