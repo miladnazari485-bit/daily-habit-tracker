@@ -116,7 +116,7 @@ void main() {
       find.text('Pilates'),
       250,
       scrollable: find.descendant(
-        of: find.byKey(const ValueKey('topic-Fitness')),
+        of: find.byKey(const ValueKey('habit-picker-list')),
         matching: find.byType(Scrollable),
       ),
     );
@@ -127,12 +127,33 @@ void main() {
     await tester.tap(find.byTooltip('Menu'));
     await tester.pumpAndSettle();
     expect(find.text('Color'), findsOneWidget);
-    expect(find.text('Monthly'), findsNothing);
+    expect(find.text('Weekly'), findsOneWidget);
+    expect(find.text('Monthly'), findsOneWidget);
+    expect(find.text('Yearly'), findsOneWidget);
+    expect(find.text('Compact'), findsOneWidget);
     expect(find.textContaining('seven days'), findsNothing);
     expect(
       find.textContaining('Today keeps one week across the top'),
       findsOneWidget,
     );
+
+    await tester.tap(find.text('Yearly'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('habit-grid-year')), findsWidgets);
+
+    await tester.tap(find.byTooltip('Menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Monthly'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('habit-grid-month')), findsWidgets);
+
+    await tester.tap(find.byTooltip('Menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Compact'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('habit-grid-week')), findsNothing);
+    expect(find.byKey(const ValueKey('habit-grid-month')), findsNothing);
+    expect(find.byKey(const ValueKey('habit-grid-year')), findsNothing);
   });
 
   testWidgets('a finished habit drops into Completed and the section folds', (

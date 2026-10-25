@@ -29,6 +29,8 @@ class AppState extends ChangeNotifier {
     String? detailHabitId,
     DateTime? detailMonth,
     String span = 'week',
+    String habitDisplay = 'week',
+    String todayList = 'today',
   }) : _habits = List<Habit>.of(habits ?? const []),
        _tasks = List<TaskItem>.of(tasks ?? const []),
        _journal = List<JournalEntry>.of(journal ?? const []),
@@ -38,6 +40,8 @@ class AppState extends ChangeNotifier {
     _tab = tab < 0 || tab > 3 ? 0 : tab;
     _habitsOpen = habitsOpen;
     _span = span == 'month' ? 'month' : 'week';
+    _habitDisplay = _knownDisplay(habitDisplay);
+    _todayList = _knownList(todayList);
     _detailHabitId = detailHabitId;
     final anchor = _selectedDate;
     _todayMonth = DateTime(
@@ -63,6 +67,9 @@ class AppState extends ChangeNotifier {
   bool _todosOpen = true;
   bool _completedOpen = false;
   String _span = 'week';
+  String _habitDisplay = 'week';
+  String _todayList = 'today';
+  String _boardQuery = '';
   String _calendarDefault = 'auto';
   int _weekStart = 0;
   String _fontSize = 'default';
@@ -100,6 +107,16 @@ class AppState extends ChangeNotifier {
   bool get todosOpen => _todosOpen;
   bool get completedOpen => _completedOpen;
   String get span => _span;
+
+  /// How each habit draws its days: compact, week, month, or year.
+  String get habitDisplay => _habitDisplay;
+
+  /// Which list Today shows: today, tasks, or habits.
+  String get todayList => _todayList;
+
+  /// Text typed into the menu search. It is not written to disk.
+  String get boardQuery => _boardQuery;
+
   String get calendarDefault => _calendarDefault;
   String get todaySpan {
     if (_calendarDefault == 'week' || _calendarDefault == 'month') {
@@ -290,6 +307,31 @@ class AppState extends ChangeNotifier {
     _completedOpen = value;
     notifyListeners();
     _scheduleSave();
+  }
+
+  /// Switches the day grid on every habit. Compact hides that grid.
+  void setHabitDisplay(String value) {
+    final next = _knownDisplay(value);
+    if (_habitDisplay == next) return;
+    _habitDisplay = next;
+    notifyListeners();
+    _scheduleSave();
+  }
+
+  /// Today View, All Tasks, or All Habits.
+  void setTodayList(String value) {
+    final next = _knownList(value);
+    if (_todayList == next) return;
+    _todayList = next;
+    notifyListeners();
+    _scheduleSave();
+  }
+
+  /// Filters habit and to-do names on Today while the menu search has text.
+  void setBoardQuery(String value) {
+    if (_boardQuery == value) return;
+    _boardQuery = value;
+    notifyListeners();
   }
 
   /// Stores a week or month preference. Today still shows only the week strip.
@@ -613,6 +655,8 @@ class AppState extends ChangeNotifier {
       'settings': {
         'appearance': _appearance,
         'span': _span,
+        'habitDisplay': _habitDisplay,
+        'todayList': _todayList,
         'calendarDefault': _calendarDefault,
         'weekStart': _weekStart,
         'fontSize': _fontSize,
@@ -675,6 +719,10 @@ class AppState extends ChangeNotifier {
     }
     final span = settings['span'];
     if (span == 'week' || span == 'month') _span = span as String;
+    final habitDisplay = settings['habitDisplay'];
+    if (habitDisplay is String) _habitDisplay = _knownDisplay(habitDisplay);
+    final todayList = settings['todayList'];
+    if (todayList is String) _todayList = _knownList(todayList);
     final calendarDefault = settings['calendarDefault'];
     if (calendarDefault == 'auto' ||
         calendarDefault == 'week' ||
@@ -703,6 +751,16 @@ class AppState extends ChangeNotifier {
     if (settings['smartInput'] is bool) {
       _smartInput = settings['smartInput'] as bool;
     }
+  }
+
+  static String _knownDisplay(String value) {
+    const allowed = {'compact', 'week', 'month', 'year'};
+    return allowed.contains(value) ? value : 'week';
+  }
+
+  static String _knownList(String value) {
+    const allowed = {'today', 'tasks', 'habits'};
+    return allowed.contains(value) ? value : 'today';
   }
 
   /// Restores the open tab, selected day, and which sections were folded.

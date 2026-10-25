@@ -8,6 +8,7 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_scope.dart';
 import '../widgets/habit_card.dart';
+import '../widgets/habit_span_grid.dart';
 import '../widgets/page_header.dart';
 import '../widgets/sheets.dart';
 import '../widgets/timer_sheet.dart';
@@ -82,7 +83,7 @@ class _TodayScreenState extends State<TodayScreen> {
       context: context,
       backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) {
         return SafeArea(
@@ -135,11 +136,17 @@ class _TodayScreenState extends State<TodayScreen> {
     final colors = AppColors.of(context);
     final selected = state.selectedDate;
     final today = dateOnly(DateTime.now());
-    final habits = state.activeHabits;
+    final habits = state.activeHabits
+        .where((habit) => _matches(habit.name, state.boardQuery))
+        .toList();
     final openHabits = habits.where((habit) => !isComplete(habit, selected));
     final doneHabits = habits.where((habit) => isComplete(habit, selected));
     final doneCount = doneHabits.length;
-    final tasks = _tasksFor(state, selected, today);
+    final showTasks = state.todayList != 'habits';
+    final showHabits = state.todayList != 'tasks';
+    final tasks = _tasksFor(state, selected, today)
+        .where((task) => _matches(task.title, state.boardQuery))
+        .toList();
 
     return Column(
       children: [
@@ -153,7 +160,7 @@ class _TodayScreenState extends State<TodayScreen> {
           trailing: HeaderIconButton(
             tooltip: 'Timer',
             onPressed: () => showTimerSheet(context),
-            circular: true,
+            circular: false,
             child: Icon(Icons.timer_outlined, color: colors.ink, size: 20),
           ),
         ),
@@ -168,35 +175,42 @@ class _TodayScreenState extends State<TodayScreen> {
                 onSelect: state.selectDate,
               ),
               const SizedBox(height: 16),
-              _SectionTitle(
-                icon: Icons.checklist_rounded,
-                title: 'To-Do List',
-                count: tasks.where((task) => !task.done).length,
-                open: state.todosOpen,
-                onTap: () => state.rememberTodosOpen(!state.todosOpen),
-              ),
-              if (state.todosOpen) ...[
-                const SizedBox(height: 8),
-                if (tasks.isEmpty)
-                  _EmptyLine(text: 'Nothing is due on this day.')
-                else
-                  for (final task in tasks)
-                    _TodoRow(
-                      task: task,
-                      today: today,
-                      onToggle: () => state.toggleTask(task.id),
-                      onPostpone: () => _postpone(task),
-                    ),
+              if (showTasks) ...[
+                _SectionTitle(
+                  icon: Icons.checklist_rounded,
+                  title: 'To-Do List',
+                  count: tasks.where((task) => !task.done).length,
+                  open: state.todosOpen,
+                  onTap: () => state.rememberTodosOpen(!state.todosOpen),
+                ),
+                if (state.todosOpen) ...[
+                  const SizedBox(height: 8),
+                  if (tasks.isEmpty)
+                    _EmptyLine(
+                      text: state.todayList == 'tasks'
+                          ? 'No to-dos match this view.'
+                          : 'Nothing is due on this day.',
+                    )
+                  else
+                    for (final task in tasks)
+                      _TodoRow(
+                        task: task,
+                        today: today,
+                        onToggle: () => state.toggleTask(task.id),
+                        onPostpone: () => _postpone(task),
+                      ),
+                ],
+                const SizedBox(height: 18),
               ],
-              const SizedBox(height: 18),
-              _SectionTitle(
-                icon: Icons.view_list_rounded,
-                title: 'Daily Habits',
-                count: openHabits.length,
-                open: state.habitsOpen,
-                progress: habits.isEmpty ? 0 : doneCount / habits.length,
-                onTap: () => state.rememberHabitsOpen(!state.habitsOpen),
-              ),
+              if (showHabits) ...[
+                _SectionTitle(
+                  icon: Icons.view_list_rounded,
+                  title: 'Daily Habits',
+                  count: openHabits.length,
+                  open: state.habitsOpen,
+                  progress: habits.isEmpty ? 0 : doneCount / habits.length,
+                  onTap: () => state.rememberHabitsOpen(!state.habitsOpen),
+                ),
               if (state.habitsOpen) ...[
                 const SizedBox(height: 8),
                 if (openHabits.isEmpty)
@@ -248,6 +262,7 @@ class _TodayScreenState extends State<TodayScreen> {
                       ),
                     ),
               ],
+              ],
             ],
           ),
         ),
@@ -255,10 +270,19 @@ class _TodayScreenState extends State<TodayScreen> {
     );
   }
 
+  /// True when [name] contains the menu search text.
+  bool _matches(String name, String query) {
+    final text = query.trim().toLowerCase();
+    if (text.isEmpty) return true;
+    return name.toLowerCase().contains(text);
+  }
+
   /// To-dos due on the selected day. Today's list also includes overdue items.
+  /// All Tasks ignores the selected day and returns every to-do.
   List<TaskItem> _tasksFor(AppState state, DateTime selected, DateTime today) {
     final viewingToday = isSameDay(selected, today);
     final items = state.tasks.where((task) {
+      if (state.todayList == 'tasks') return true;
       if (isSameDay(task.dueDate, selected)) return true;
       return viewingToday && task.isOverdueOn(today);
     }).toList();
@@ -325,9 +349,9 @@ class _DayPill extends StatelessWidget {
     const letters = ['Su', 'M', 'T', 'W', 'Th', 'F', 'S'];
     return Material(
       color: selected ? colors.card : colors.chip.withValues(alpha: 0.55),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -384,7 +408,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -527,7 +551,7 @@ class _TodoRowState extends State<_TodoRow> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: colors.card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
           child: Column(
@@ -624,13 +648,12 @@ class _HabitTile extends StatelessWidget {
     final state = AppScope.of(context);
     final value = valueOn(habit, selected);
     final future = dateOnly(selected).isAfter(today);
-    final start = startOfWeek(selected, weekStart: weekStart);
     final color = Color(habit.colorValue);
     return Material(
       color: colors.card,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(10),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(10),
         onTap: onOpen,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
@@ -680,19 +703,15 @@ class _HabitTile extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  for (var i = 0; i < 7; i++)
-                    Expanded(
-                      child: _DayBar(
-                        day: start.add(Duration(days: i)),
-                        ratio: ratioOn(habit, start.add(Duration(days: i))),
-                        color: color,
-                      ),
-                    ),
-                ],
-              ),
+              if (state.habitDisplay != 'compact') ...[
+                const SizedBox(height: 12),
+                HabitSpanGrid(
+                  habit: habit,
+                  anchor: selected,
+                  weekStart: weekStart,
+                  display: state.habitDisplay,
+                ),
+              ],
             ],
           ),
         ),
@@ -720,16 +739,16 @@ class _Action extends StatelessWidget {
     final colors = AppColors.of(context);
     return Material(
       color: Colors.transparent,
-      shape: const CircleBorder(),
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
-        customBorder: const CircleBorder(),
+        borderRadius: BorderRadius.circular(8),
         onTap: onTap,
         child: Container(
           width: 36,
           height: 36,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: done ? color : colors.muted.withValues(alpha: 0.7),
               width: 1.6,
@@ -750,51 +769,4 @@ class _Action extends StatelessWidget {
   }
 }
 
-/// One day's fill inside a habit card, from empty up to the daily goal.
-class _DayBar extends StatelessWidget {
-  const _DayBar({required this.day, required this.ratio, required this.color});
-
-  final DateTime day;
-  final double ratio;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    const letters = ['Su', 'M', 'T', 'W', 'Th', 'F', 'S'];
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: Column(
-        children: [
-          Container(
-            height: 22,
-            decoration: BoxDecoration(
-              color: colors.chip,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            alignment: Alignment.bottomCenter,
-            child: FractionallySizedBox(
-              heightFactor: ratio <= 0 ? 0.08 : ratio.clamp(0.15, 1),
-              widthFactor: 1,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: ratio <= 0 ? colors.line : color.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            letters[sundayIndex(day)],
-            style: TextStyle(
-              color: colors.muted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+/// Plus adds one unit. A large goal opens the logger. A finished habit clears.

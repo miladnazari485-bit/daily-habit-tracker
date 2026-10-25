@@ -79,7 +79,7 @@ class SettingsScreen extends StatelessWidget {
                       onTap: () => _info(
                         context,
                         'Tutorial',
-                        'The + button opens New Habit. Count is five rows you can scroll sideways: Fitness, Health, Mind, Chores, and Reduce. Today keeps one week across the top. Tap a to-do to write a comment. The row stays one line until you tap it.',
+                        'The + button opens New Habit. Count groups Fitness, Health, Mind, Chores, and Reduce. The side menu switches every habit between Compact, Weekly, Monthly, and Yearly. Today keeps one week across the top. Tap a to-do to write a comment. The row stays one line until you tap it.',
                       ),
                     ),
                   ),

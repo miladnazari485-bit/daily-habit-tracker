@@ -269,7 +269,7 @@ ThemeData _build(AppColors colors, Brightness brightness) {
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: colors.card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
@@ -279,7 +279,7 @@ ThemeData _build(AppColors colors, Brightness brightness) {
         fontFamily: 'PlusJakartaSans',
         fontWeight: FontWeight.w600,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -287,7 +287,7 @@ ThemeData _build(AppColors colors, Brightness brightness) {
         foregroundColor: colors.card,
         minimumSize: const Size.fromHeight(48),
         textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -301,7 +301,7 @@ ThemeData _build(AppColors colors, Brightness brightness) {
       fillColor: colors.chip,
       hintStyle: TextStyle(color: colors.muted, fontWeight: FontWeight.w500),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

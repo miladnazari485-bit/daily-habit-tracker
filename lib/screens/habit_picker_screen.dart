@@ -8,8 +8,8 @@ import '../widgets/sheets.dart';
 
 /// Suggested habits the user can add without typing a name.
 ///
-/// Count is five labeled rows that scroll sideways. To-Do on this screen
-/// creates a task for the list on Today.
+/// Each section is one card. Count lists Fitness, Health, Mind, Chores,
+/// and Reduce, and the chips wrap so the choices stay on the screen.
 class HabitPickerScreen extends StatefulWidget {
   const HabitPickerScreen({super.key, required this.onClose});
 
@@ -77,6 +77,7 @@ class _HabitPickerScreenState extends State<HabitPickerScreen> {
           ),
           Expanded(
             child: ListView(
+              key: const ValueKey('habit-picker-list'),
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               children: [
                 for (final group in habitCatalog)
@@ -93,60 +94,41 @@ class _HabitPickerScreenState extends State<HabitPickerScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Column(
               children: [
+                TextField(
+                  controller: _search,
+                  onChanged: (_) => setState(() {}),
+                  decoration: const InputDecoration(
+                    hintText: 'Search Habits',
+                    prefixIcon: Icon(Icons.search_rounded),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
-                      child: TextField(
-                        controller: _search,
-                        onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(
-                          hintText: 'Search Habits',
-                          suffixIcon: Icon(Icons.search_rounded),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width: 156,
                       child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        ),
                         onPressed: () =>
                             showComposer(context, kind: ComposerKind.habit),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                'Custom Habit',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Icon(Icons.chevron_right_rounded, size: 20),
-                          ],
+                        child: const Text('Custom Habit'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colors.ink,
+                          side: BorderSide(color: colors.line),
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
+                        onPressed: _addTodo,
+                        icon: const Icon(Icons.checklist_rounded, size: 18),
+                        label: const Text('To-Do'),
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colors.ink,
-                      side: BorderSide(color: colors.line),
-                      minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: _addTodo,
-                    icon: const Icon(Icons.checklist_rounded, size: 18),
-                    label: const Text('To-Do'),
-                  ),
                 ),
               ],
             ),
@@ -225,59 +207,59 @@ class _GroupBlock extends StatelessWidget {
         ? [HabitTopic(title: '', suggestions: group.suggestions)]
         : group.topics;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.card,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.line),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: BoxDecoration(
-                  color: colors.chip,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(_icon(group.icon), size: 18, color: colors.ink),
-                    const SizedBox(width: 6),
-                    Text(
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: colors.chip,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(_icon(group.icon), size: 18, color: colors.ink),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
                       group.title,
                       style: TextStyle(
                         color: colors.ink,
                         fontWeight: FontWeight.w800,
+                        fontSize: 16,
                       ),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                group.detail,
+                style: TextStyle(
+                  color: colors.muted,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  height: 1.3,
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: colors.chip,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    group.detail,
-                    style: TextStyle(
-                      color: colors.ink,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      height: 1.25,
-                    ),
-                  ),
-                ),
-              ),
+              const SizedBox(height: 10),
+              for (final topic in topics)
+                _TopicRow(topic: topic, query: query, onPick: onPick),
             ],
           ),
-          const SizedBox(height: 10),
-          for (final topic in topics)
-            _TopicRow(topic: topic, query: query, onPick: onPick),
-        ],
+        ),
       ),
     );
   }
@@ -300,7 +282,7 @@ class _GroupBlock extends StatelessWidget {
   }
 }
 
-/// A topic label plus the sideways row of its habit chips.
+/// A topic label and the habit chips that belong under it.
 class _TopicRow extends StatelessWidget {
   const _TopicRow({
     required this.topic,
@@ -321,38 +303,29 @@ class _TopicRow extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
     final labeled = topic.title.isNotEmpty;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
+      key: ValueKey('topic-${topic.title}'),
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (labeled)
-            SizedBox(
-              width: 76,
-              child: Text(
-                '${topic.title}:',
-                style: TextStyle(
-                  color: colors.ink,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
+          if (labeled) ...[
+            Text(
+              '${topic.title}:',
+              style: TextStyle(
+                color: colors.ink,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
               ),
             ),
-          Expanded(
-            child: SizedBox(
-              height: 44,
-              child: ListView.separated(
-                key: ValueKey('topic-${topic.title}'),
-                scrollDirection: Axis.horizontal,
-                primary: false,
-                itemCount: items.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  return _SuggestionChip(
-                    suggestion: items[index],
-                    onPick: onPick,
-                  );
-                },
-              ),
-            ),
+            const SizedBox(height: 6),
+          ],
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final item in items)
+                _SuggestionChip(suggestion: item, onPick: onPick),
+            ],
           ),
         ],
       ),
@@ -372,9 +345,9 @@ class _SuggestionChip extends StatelessWidget {
     final color = Color(suggestion.colorValue);
     return Material(
       color: color,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         onTap: () => onPick(suggestion),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

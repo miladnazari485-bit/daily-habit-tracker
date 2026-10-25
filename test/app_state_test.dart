@@ -222,12 +222,16 @@ void main() {
     final today = dateOnly(DateTime.now());
     first.setHabitValue('water', today, 2);
     first.rememberSpan('month');
+    first.setHabitDisplay('year');
+    first.setTodayList('habits');
     first.signIn('miladnazari485@gmail.com');
     await first.settled;
 
     final second = AppState();
     await second.load();
     expect(second.todaySpan, 'month');
+    expect(second.habitDisplay, 'year');
+    expect(second.todayList, 'habits');
     expect(second.accountEmail, 'miladnazari485@gmail.com');
     expect(second.signedIn, isTrue);
     final entry = second.journal.where(

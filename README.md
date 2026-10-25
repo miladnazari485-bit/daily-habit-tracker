@@ -32,15 +32,16 @@ Check what is missing with:
 flutter doctor
 ```
 
-Each habit and each to-do is its own item. Habits are checked per day. To-dos have a due date. A bottom bar stays on every screen: Today, Journal, Calendar, and Settings. Today keeps one week of rounded day pills across the top. The month grid is on Calendar. A habit that reaches its goal for the selected day leaves Daily Habits and sits in Completed, which opens and closes from its header. Tap a to-do on Today to write a comment; the row stays one line until you tap it. After the first launch, the phone remembers the day, each page, and which habit you had open.
+Each habit and each to-do is its own item. Habits are checked per day. To-dos have a due date. A bottom bar stays on every screen: Today, Journal, Calendar, and Settings. Today keeps one week of day pills across the top. The side menu switches every habit between Compact, Weekly, Monthly, and Yearly. Weekly is seven days, Monthly is the weeks of that month, and Yearly is a dense grid of the last 53 weeks. The month grid is on Calendar. A habit that reaches its goal for the selected day leaves Daily Habits and sits in Completed, which opens and closes from its header. Tap a to-do on Today to write a comment; the row stays one line until you tap it. After the first launch, the phone remembers the day, each page, and which habit you had open.
 
 Versions use semantic versioning in `pubspec.yaml` (`MAJOR.MINOR.PATCH+build`) and the same name in `lib/app_version.dart`. Raise PATCH for a fix, MINOR for a new behavior, and the build number on every installable Android file.
 
 ## What you can do
 
 - On Today, work through To-Do List, Daily Habits, and Completed. A habit moves into Completed on the day it hits its goal.
-- The + button opens New Habit. Pick a suggested habit, or make a custom one. Count is five sideways rows: Fitness, Health, Mind, Chores, and Reduce. The choice is saved on the phone.
-- Switch appearance among Day, Color, and Night. Color uses the navy, cyan, and orange from the app icon. Cards, buttons, and day pills are rounded.
+- The + button opens New Habit. Each group sits in its own card. Count is Fitness, Health, Mind, Chores, and Reduce, with the choices wrapped on the screen. The choice is saved on the phone.
+- The side menu sets Habit Display to Compact, Weekly, Monthly, or Yearly. That changes the day grid on every habit you created.
+- Switch appearance among Day, Color, and Night. Color uses the navy, cyan, and orange from the app icon. Buttons and chips keep a small corner radius.
 - Read the Journal for each log, with the time, the habit, and the amount.
 - See the week on Calendar as colored blocks for habits and to-dos.
 - Use Settings for appearance, week start, font size, archive, export, and a Google address kept on this phone. Sign-in does not contact Google.

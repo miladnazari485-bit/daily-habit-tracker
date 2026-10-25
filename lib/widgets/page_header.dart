@@ -110,7 +110,7 @@ class HeaderIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final radius = circular ? 21.0 : 14.0;
+    final radius = circular ? 21.0 : 8.0;
     return Tooltip(
       message: tooltip,
       child: Material(
@@ -153,7 +153,7 @@ class _ChartButton extends StatelessWidget {
           children: [
             Material(
               color: colors.ink,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(8),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: onPressed,

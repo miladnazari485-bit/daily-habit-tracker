@@ -19,7 +19,7 @@ class HabitNameChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         name,
@@ -49,7 +49,7 @@ class StreakPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
         color: colors.streakPill,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -112,7 +112,7 @@ class HabitCard extends StatelessWidget {
       children: [
         Material(
           color: colors.card,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(10),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onOpen,
@@ -186,7 +186,7 @@ class HabitCard extends StatelessWidget {
         DecoratedBox(
           decoration: BoxDecoration(
             color: color.withValues(alpha: dark ? 0.1 : 0.16),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Padding(
             padding: const EdgeInsets.all(10),
