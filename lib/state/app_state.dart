@@ -255,9 +255,11 @@ class AppState extends ChangeNotifier {
     _scheduleSave();
   }
 
-  /// Sets Day, Night, or System. Night paints the dark cards from the reference.
+  /// Sets Day, Color, Night, or a saved System value.
+  ///
+  /// Color uses the navy, cyan, and orange from the app icon.
   void setAppearance(String value) {
-    const allowed = {'system', 'day', 'night'};
+    const allowed = {'system', 'day', 'night', 'color'};
     if (!allowed.contains(value) || _appearance == value) return;
     _appearance = value;
     notifyListeners();
@@ -267,8 +269,12 @@ class AppState extends ChangeNotifier {
   /// Switches between the day and night palettes.
   void setNight(bool value) => setAppearance(value ? 'night' : 'day');
 
-  /// Flips the current day or night palette.
-  void toggleNight() => setNight(!night);
+  /// Moves Day, then Color, then Night, then back to Day.
+  void toggleNight() {
+    const order = ['day', 'color', 'night'];
+    final index = order.indexOf(_appearance);
+    setAppearance(order[(index + 1) % order.length]);
+  }
 
   /// Folds or opens the To-Do List. Listeners rebuild Today.
   void rememberTodosOpen(bool value) {
@@ -647,7 +653,10 @@ class AppState extends ChangeNotifier {
   void _applySettings(Map<String, dynamic>? settings) {
     if (settings == null) return;
     final appearance = settings['appearance'];
-    if (appearance == 'system' || appearance == 'day' || appearance == 'night') {
+    if (appearance == 'system' ||
+        appearance == 'day' ||
+        appearance == 'night' ||
+        appearance == 'color') {
       _appearance = appearance as String;
     }
     final span = settings['span'];

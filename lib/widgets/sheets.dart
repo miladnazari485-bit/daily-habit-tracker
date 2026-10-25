@@ -23,7 +23,7 @@ Future<void> showComposer(
     isScrollControlled: true,
     backgroundColor: colors.card,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      borderRadius: BorderRadius.vertical(top: Radius.zero),
     ),
     builder: (context) {
       return Padding(
@@ -48,7 +48,7 @@ Future<void> showLogSheet(
     isScrollControlled: true,
     backgroundColor: colors.card,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      borderRadius: BorderRadius.vertical(top: Radius.zero),
     ),
     builder: (context) {
       return Padding(
@@ -274,7 +274,7 @@ class _ComposerState extends State<_Composer> {
               const SizedBox(height: 12),
               Material(
                 color: colors.chip,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.zero,
                 clipBehavior: Clip.antiAlias,
                 child: ListTile(
                   title: const Text(
@@ -324,7 +324,7 @@ class _ComposerState extends State<_Composer> {
     final colors = AppColors.of(context);
     return Material(
       color: colors.chip,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.zero,
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         leading: Icon(icon, color: colors.ink),
@@ -366,7 +366,7 @@ class _ComposerState extends State<_Composer> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: colors.chip,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.zero,
       ),
       child: Row(
         children: [
@@ -400,9 +400,9 @@ class _ComposerState extends State<_Composer> {
     return Expanded(
       child: Material(
         color: selected ? colors.card : Colors.transparent,
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.zero,
         child: InkWell(
-          borderRadius: BorderRadius.circular(11),
+          borderRadius: BorderRadius.zero,
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -430,9 +430,9 @@ class _ComposerState extends State<_Composer> {
   Widget _mini(AppColors colors, IconData icon, VoidCallback onTap) {
     return Material(
       color: colors.chip,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.zero,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.zero,
         onTap: onTap,
         child: SizedBox(
           width: 42,
@@ -740,9 +740,9 @@ class _LogSheetState extends State<_LogSheet> {
   Widget _amountButton(AppColors colors, IconData icon, VoidCallback onTap) {
     return Material(
       color: colors.chip,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.zero,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.zero,
         onTap: onTap,
         child: SizedBox(width: 48, height: 48, child: Icon(icon)),
       ),

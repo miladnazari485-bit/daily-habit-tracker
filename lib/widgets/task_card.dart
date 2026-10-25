@@ -25,7 +25,7 @@ class TaskCard extends StatelessWidget {
     final overdue = task.isOverdueOn(today);
     return Material(
       color: colors.card,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -38,7 +38,7 @@ class TaskCard extends StatelessWidget {
                 height: 28,
                 decoration: BoxDecoration(
                   color: colors.taskIcon,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.zero,
                 ),
                 child: Icon(
                   Icons.checklist_rounded,
@@ -76,7 +76,7 @@ class TaskCard extends StatelessWidget {
                 child: Material(
                   color: task.done ? colors.ink : Colors.transparent,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.zero,
                     side: BorderSide(
                       color: task.done ? colors.ink : colors.line,
                       width: 1.4,

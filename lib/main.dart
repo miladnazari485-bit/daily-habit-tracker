@@ -28,7 +28,7 @@ class HabitTrackerApp extends StatefulWidget {
 }
 
 class _HabitTrackerAppState extends State<HabitTrackerApp> {
-  ThemeMode? _mode;
+  String? _appearance;
 
   @override
   void initState() {
@@ -43,22 +43,23 @@ class _HabitTrackerAppState extends State<HabitTrackerApp> {
   }
 
   void _onState() {
-    if (_mode != widget.state.themeMode) {
-      setState(() => _mode = widget.state.themeMode);
+    if (_appearance != widget.state.appearance) {
+      setState(() => _appearance = widget.state.appearance);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    _mode = widget.state.themeMode;
+    _appearance = widget.state.appearance;
+    final colorMode = _appearance == 'color';
     return AppScope(
       state: widget.state,
       child: MaterialApp(
         title: 'Habit Tracker',
         debugShowCheckedModeBanner: false,
-        theme: buildLightTheme(),
-        darkTheme: buildDarkTheme(),
-        themeMode: widget.state.themeMode,
+        theme: colorMode ? buildColorTheme() : buildLightTheme(),
+        darkTheme: colorMode ? buildColorTheme() : buildDarkTheme(),
+        themeMode: colorMode ? ThemeMode.light : widget.state.themeMode,
         themeAnimationDuration: const Duration(milliseconds: 250),
         scrollBehavior: const AppScrollBehavior(),
         builder: (context, child) {
@@ -100,7 +101,7 @@ class ResponsiveFrame extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: colors.scaffold,
-                  borderRadius: BorderRadius.circular(32),
+                  borderRadius: BorderRadius.zero,
                   boxShadow: [
                     BoxShadow(
                       color: colors.ink.withValues(alpha: 0.14),
@@ -110,7 +111,7 @@ class ResponsiveFrame extends StatelessWidget {
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(32),
+                  borderRadius: BorderRadius.zero,
                   child: SizedBox(width: 400, height: height, child: child),
                 ),
               ),

@@ -81,6 +81,27 @@ class AppColors extends ThemeExtension<AppColors> {
     canvas: Color(0xFF0B0B0D),
   );
 
+  /// Navy, cyan, and orange measured from the app icon.
+  static const color = AppColors(
+    scaffold: Color(0xFF061942),
+    card: Color(0xFF0C2C62),
+    chip: Color(0xFF12366F),
+    band: Color(0xFF082252),
+    postpone: Color(0xFF16407A),
+    muted: Color(0xFF8FB4D4),
+    weekday: Color(0xFF01B2F1),
+    weekend: Color(0xFF2EE6D6),
+    ink: Color(0xFFF4FBFF),
+    badge: Color(0xFFF99E05),
+    line: Color(0xFF1A4580),
+    fab: Color(0xFF01B2F1),
+    onFab: Color(0xFF061942),
+    taskIcon: Color(0xFF12366F),
+    taskIconInk: Color(0xFF2EE6D6),
+    streakPill: Color(0xFF12366F),
+    canvas: Color(0xFF04122E),
+  );
+
   static AppColors of(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>();
     if (colors == null) {
@@ -210,6 +231,9 @@ ThemeData buildLightTheme() => _build(AppColors.light, Brightness.light);
 
 ThemeData buildDarkTheme() => _build(AppColors.dark, Brightness.dark);
 
+/// Icon palette: deep navy ground, cyan type, orange marks.
+ThemeData buildColorTheme() => _build(AppColors.color, Brightness.dark);
+
 ThemeData _build(AppColors colors, Brightness brightness) {
   final scheme = ColorScheme(
     brightness: brightness,
@@ -245,7 +269,7 @@ ThemeData _build(AppColors colors, Brightness brightness) {
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: colors.card,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
@@ -255,7 +279,7 @@ ThemeData _build(AppColors colors, Brightness brightness) {
         fontFamily: 'PlusJakartaSans',
         fontWeight: FontWeight.w600,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -263,7 +287,7 @@ ThemeData _build(AppColors colors, Brightness brightness) {
         foregroundColor: colors.card,
         minimumSize: const Size.fromHeight(48),
         textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -277,7 +301,7 @@ ThemeData _build(AppColors colors, Brightness brightness) {
       fillColor: colors.chip,
       hintStyle: TextStyle(color: colors.muted, fontWeight: FontWeight.w500),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.zero,
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

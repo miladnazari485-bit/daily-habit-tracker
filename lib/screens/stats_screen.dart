@@ -120,7 +120,7 @@ class _SummaryCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
         color: colors.card,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.zero,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,7 +174,7 @@ class _WeekCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
       decoration: BoxDecoration(
         color: colors.card,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.zero,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +224,7 @@ class _WeekCard extends StatelessWidget {
             color: isToday
                 ? colors.ink
                 : colors.weekday.withValues(alpha: 0.75),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.zero,
           ),
         ),
         const SizedBox(height: 6),
@@ -263,7 +263,7 @@ class _HabitStat extends StatelessWidget {
     final rate = monthRate(habit, month, today);
     return Material(
       color: colors.card,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,

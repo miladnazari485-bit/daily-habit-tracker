@@ -171,7 +171,7 @@ class _DayChip extends StatelessWidget {
       child: Material(
         color: selected ? colors.card : colors.chip,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.zero,
           side: BorderSide(
             color: selected ? colors.ink : Colors.transparent,
             width: 1.6,

@@ -6,10 +6,9 @@ import '../theme/app_theme.dart';
 import '../widgets/app_scope.dart';
 import '../widgets/sheets.dart';
 
-/// Suggested habits the user can add without typing a name.
+/// Suggested habits. Each chip is saved as that habit, not as a to-do.
 ///
-/// Count is five labeled rows that scroll sideways. To-Do on this screen
-/// creates a task for the list on Today.
+/// Count is five labeled rows that scroll sideways.
 class HabitPickerScreen extends StatefulWidget {
   const HabitPickerScreen({super.key, required this.onClose});
 
@@ -91,61 +90,33 @@ class _HabitPickerScreenState extends State<HabitPickerScreen> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Column(
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _search,
-                        onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(
-                          hintText: 'Search Habits',
-                          suffixIcon: Icon(Icons.search_rounded),
-                        ),
-                      ),
+                Expanded(
+                  child: TextField(
+                    controller: _search,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: 'Search Habits',
+                      suffixIcon: Icon(Icons.search_rounded),
                     ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width: 156,
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        ),
-                        onPressed: () =>
-                            showComposer(context, kind: ComposerKind.habit),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                'Custom Habit',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Icon(Icons.chevron_right_rounded, size: 20),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(width: 10),
                 SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colors.ink,
-                      side: BorderSide(color: colors.line),
-                      minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                  width: 156,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: const RoundedRectangleBorder(),
                     ),
-                    onPressed: _addTodo,
-                    icon: const Icon(Icons.checklist_rounded, size: 18),
-                    label: const Text('To-Do'),
+                    onPressed: () =>
+                        showComposer(context, kind: ComposerKind.habit),
+                    child: const Text(
+                      'Custom Habit',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
@@ -160,14 +131,6 @@ class _HabitPickerScreenState extends State<HabitPickerScreen> {
   bool _visible(HabitGroup group, String query) {
     if (query.isEmpty) return true;
     return group.all.any((item) => item.name.toLowerCase().contains(query));
-  }
-
-  /// Opens the task form. A saved to-do closes this screen so it shows on Today.
-  Future<void> _addTodo() async {
-    final before = AppScope.of(context).tasks.length;
-    await showComposer(context, kind: ComposerKind.task);
-    if (!mounted) return;
-    if (AppScope.of(context).tasks.length > before) widget.onClose();
   }
 
   /// Adds the suggestion, or restores it when that name was archived.
@@ -236,7 +199,7 @@ class _GroupBlock extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
                   color: colors.chip,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.zero,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -259,7 +222,7 @@ class _GroupBlock extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: colors.chip,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.zero,
                   ),
                   child: Text(
                     group.detail,
@@ -372,9 +335,9 @@ class _SuggestionChip extends StatelessWidget {
     final color = Color(suggestion.colorValue);
     return Material(
       color: color,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.zero,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.zero,
         onTap: () => onPick(suggestion),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

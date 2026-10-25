@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/app_scope.dart';
 
 class PageHeader extends StatelessWidget {
   const PageHeader({
@@ -31,7 +32,14 @@ class PageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final appearance = AppScope.of(context).appearance;
+    final shown = appearance == 'system' ? (night ? 'night' : 'day') : appearance;
     final top = math.max(MediaQuery.paddingOf(context).top, 10.0);
+    final themeIcon = switch (shown) {
+      'night' => Icons.dark_mode_rounded,
+      'color' => Icons.palette_outlined,
+      _ => Icons.light_mode_rounded,
+    };
     return Padding(
       padding: EdgeInsets.fromLTRB(16, top + 6, 16, 6),
       child: SizedBox(
@@ -57,18 +65,9 @@ class PageHeader extends StatelessWidget {
                 const Spacer(),
                 trailing ??
                     HeaderIconButton(
-                      tooltip: night
-                          ? 'Switch to day mood'
-                          : 'Switch to night mood',
+                      tooltip: 'Day, Color, or Night',
                       onPressed: onToggleTheme,
-                      circular: true,
-                      child: Icon(
-                        night
-                            ? Icons.light_mode_rounded
-                            : Icons.dark_mode_rounded,
-                        color: colors.ink,
-                        size: 20,
-                      ),
+                      child: Icon(themeIcon, color: colors.ink, size: 20),
                     ),
               ],
             ),
@@ -154,7 +153,7 @@ class _ChartButton extends StatelessWidget {
           children: [
             Material(
               color: colors.ink,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.zero,
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: onPressed,

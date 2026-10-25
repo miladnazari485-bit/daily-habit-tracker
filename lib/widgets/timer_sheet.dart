@@ -13,7 +13,7 @@ Future<void> showTimerSheet(BuildContext context) {
     context: context,
     backgroundColor: colors.card,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      borderRadius: BorderRadius.vertical(top: Radius.zero),
     ),
     builder: (context) => _TimerSheet(countdown: countdown),
   );

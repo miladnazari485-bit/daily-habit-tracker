@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_scope.dart';
 import '../widgets/sheets.dart';
+import 'add_choice_screen.dart';
 import 'calendar_screen.dart';
 import 'habit_detail_screen.dart';
 import 'habit_picker_screen.dart';
@@ -26,6 +27,8 @@ class _ShellState extends State<Shell> {
   bool _statsOpen = false;
   bool _achievementsOpen = false;
   bool _picking = false;
+  bool _choosing = false;
+  bool _todoPicking = false;
   bool _sessionApplied = false;
 
   /// Switches the bottom bar and closes any page that was covering the tabs.
@@ -95,15 +98,19 @@ class _ShellState extends State<Shell> {
     final drawerOpen = _scaffoldKey.currentState?.isDrawerOpen ?? false;
     final overlay = _detailId != null || _statsOpen || _achievementsOpen;
     return PopScope(
-      canPop: !overlay && !_picking && !drawerOpen,
+      canPop: !overlay && !_picking && !_choosing && !_todoPicking && !drawerOpen,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
           Navigator.pop(context);
           return;
         }
-        if (_picking) {
-          setState(() => _picking = false);
+        if (_picking || _todoPicking || _choosing) {
+          setState(() {
+            _picking = false;
+            _todoPicking = false;
+            _choosing = false;
+          });
           return;
         }
         if (_achievementsOpen) {
@@ -123,17 +130,17 @@ class _ShellState extends State<Shell> {
           appearance: state.appearance,
           onAppearance: state.setAppearance,
         ),
-        floatingActionButton: overlay || _picking || _tab == 3
+        floatingActionButton: overlay || _picking || _choosing || _todoPicking || _tab == 3
             ? null
             : FloatingActionButton(
                 tooltip: 'Add',
                 backgroundColor: colors.fab,
                 foregroundColor: colors.onFab,
                 elevation: 2,
-                shape: const CircleBorder(),
+                shape: const RoundedRectangleBorder(),
                 onPressed: () {
                   if (_tab == 0 || _tab == 1) {
-                    setState(() => _picking = true);
+                    setState(() => _choosing = true);
                   } else {
                     showComposer(context, kind: ComposerKind.task);
                   }
@@ -168,10 +175,30 @@ class _ShellState extends State<Shell> {
                 ),
               ],
             ),
+            if (_choosing)
+              Positioned.fill(
+                child: AddChoiceScreen(
+                  onClose: () => setState(() => _choosing = false),
+                  onHabit: () => setState(() {
+                    _choosing = false;
+                    _picking = true;
+                  }),
+                  onTodo: () => setState(() {
+                    _choosing = false;
+                    _todoPicking = true;
+                  }),
+                ),
+              ),
             if (_picking)
               Positioned.fill(
                 child: HabitPickerScreen(
                   onClose: () => setState(() => _picking = false),
+                ),
+              ),
+            if (_todoPicking)
+              Positioned.fill(
+                child: TodoPickerScreen(
+                  onClose: () => setState(() => _todoPicking = false),
                 ),
               ),
             if (_detailId != null)
@@ -312,7 +339,7 @@ class _AppDrawer extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'Today keeps one week across the top. The month grid is on Calendar.',
+                'The days across the top scroll sideways. Today is marked on that strip.',
                 style: TextStyle(color: colors.muted, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 22),
@@ -325,22 +352,22 @@ class _AppDrawer extends StatelessWidget {
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: colors.chip,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.zero,
                 ),
                 child: Row(
                   children: [
                     _mini(colors, 'Day', appearance == 'day', () => onAppearance('day')),
                     _mini(
                       colors,
-                      'Night',
-                      appearance == 'night',
-                      () => onAppearance('night'),
+                      'Color',
+                      appearance == 'color',
+                      () => onAppearance('color'),
                     ),
                     _mini(
                       colors,
-                      'System',
-                      appearance == 'system',
-                      () => onAppearance('system'),
+                      'Night',
+                      appearance == 'night',
+                      () => onAppearance('night'),
                     ),
                   ],
                 ),
@@ -365,9 +392,9 @@ class _AppDrawer extends StatelessWidget {
     return Expanded(
       child: Material(
         color: selected ? colors.card : Colors.transparent,
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.zero,
         child: InkWell(
-          borderRadius: BorderRadius.circular(11),
+          borderRadius: BorderRadius.zero,
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),

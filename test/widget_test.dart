@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:habit_tracker/logic/dates.dart';
 import 'package:habit_tracker/main.dart';
 import 'package:habit_tracker/models/habit.dart';
 import 'package:habit_tracker/state/app_state.dart';
@@ -21,13 +22,23 @@ void main() {
     await tester.pumpWidget(HabitTrackerApp(state: state));
     await tester.pumpAndSettle();
 
-    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Today'), findsWidgets);
     expect(find.text('Wake Up Early'), findsWidgets);
     expect(find.text('Drink Water'), findsWidgets);
     expect(find.text('Buy groceries'), findsOneWidget);
     expect(find.text('To-Do List'), findsOneWidget);
     expect(find.text('Daily Habits'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
+    final later = dateOnly(DateTime.now()).add(const Duration(days: 14));
+    await tester.scrollUntilVisible(
+      find.byKey(ValueKey('day-${dateKey(later)}')),
+      160,
+      scrollable: find.descendant(
+        of: find.byKey(const ValueKey('today-strip')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.byKey(ValueKey('day-${dateKey(later)}')), findsOneWidget);
 
     await tester.drag(find.byKey(const ValueKey('today-list')), const Offset(0, -500));
     await tester.pumpAndSettle();
@@ -98,6 +109,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Add'));
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('choose-habit')), findsOneWidget);
+    expect(find.byKey(const ValueKey('choose-todo')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('choose-habit')));
+    await tester.pumpAndSettle();
     expect(find.text('New Habit'), findsOneWidget);
     expect(find.text('Exercise'), findsOneWidget);
     expect(find.text('Custom Habit'), findsOneWidget);
@@ -121,23 +137,24 @@ void main() {
     );
     expect(find.text('Pilates'), findsOneWidget);
 
-    await tester.tap(find.text('To-Do'));
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
-    expect(find.text('New task'), findsOneWidget);
-    await tester.enterText(find.byType(TextField).last, 'Call the dentist');
-    await tester.tap(find.text('Add'));
+    await tester.tap(find.byTooltip('Add'));
     await tester.pumpAndSettle();
-    expect(find.text('Call the dentist'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('choose-todo')));
+    await tester.pumpAndSettle();
+    expect(find.text('Each button records its own task.'), findsOneWidget);
+    await tester.tap(find.text('Pay bills'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pay bills'), findsOneWidget);
     expect(find.text('New Habit'), findsNothing);
 
     await tester.tap(find.byTooltip('Menu'));
     await tester.pumpAndSettle();
+    expect(find.text('Color'), findsOneWidget);
     expect(find.text('Monthly'), findsNothing);
     expect(find.textContaining('seven days'), findsNothing);
-    expect(
-      find.textContaining('Today keeps one week across the top'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('scroll sideways'), findsOneWidget);
   });
 
   testWidgets('a finished habit drops into Completed and the section folds', (
