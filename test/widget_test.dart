@@ -116,7 +116,7 @@ void main() {
       find.text('Pilates'),
       250,
       scrollable: find.descendant(
-        of: find.byKey(const ValueKey('habit-picker-list')),
+        of: find.byKey(const ValueKey('topic-Fitness')),
         matching: find.byType(Scrollable),
       ),
     );

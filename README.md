@@ -39,7 +39,7 @@ Versions use semantic versioning in `pubspec.yaml` (`MAJOR.MINOR.PATCH+build`) a
 ## What you can do
 
 - On Today, work through To-Do List, Daily Habits, and Completed. A habit moves into Completed on the day it hits its goal.
-- The + button opens New Habit. Each group sits in its own card. Count is Fitness, Health, Mind, Chores, and Reduce, with the choices wrapped on the screen. The choice is saved on the phone.
+- The + button opens New Habit. Count is five sideways rows: Fitness, Health, Mind, Chores, and Reduce. The choice is saved on the phone.
 - The side menu sets Habit Display to Compact, Weekly, Monthly, or Yearly. That changes the day grid on every habit you created.
 - Switch appearance among Day, Color, and Night. Color uses the navy, cyan, and orange from the app icon. Buttons and chips keep a small corner radius.
 - Read the Journal for each log, with the time, the habit, and the amount.

@@ -8,8 +8,7 @@ import '../widgets/sheets.dart';
 
 /// Suggested habits the user can add without typing a name.
 ///
-/// Each section is one card. Count lists Fitness, Health, Mind, Chores,
-/// and Reduce, and the chips wrap so the choices stay on the screen.
+/// Count keeps five topic labels, with each topic's habits scrolling sideways.
 class HabitPickerScreen extends StatefulWidget {
   const HabitPickerScreen({super.key, required this.onClose});
 
@@ -202,10 +201,75 @@ class _GroupBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (group.topics.isNotEmpty) return _countSection(context);
+    return _cardSection(context);
+  }
+
+  /// Count: the section name, then Fitness, Health, Mind, Chores, and Reduce.
+  Widget _countSection(BuildContext context) {
     final colors = AppColors.of(context);
-    final topics = group.topics.isEmpty
-        ? [HabitTopic(title: '', suggestions: group.suggestions)]
-        : group.topics;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: colors.chip,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_icon(group.icon), size: 18, color: colors.ink),
+                    const SizedBox(width: 6),
+                    Text(
+                      group.title,
+                      style: TextStyle(
+                        color: colors.ink,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: colors.chip,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    group.detail,
+                    style: TextStyle(
+                      color: colors.ink,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          for (final topic in group.topics)
+            _TopicRow(topic: topic, query: query, onPick: onPick),
+        ],
+      ),
+    );
+  }
+
+  /// Other groups stay in one card. Their chips wrap under the title.
+  Widget _cardSection(BuildContext context) {
+    final colors = AppColors.of(context);
+    final topics = [HabitTopic(title: '', suggestions: group.suggestions)];
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DecoratedBox(
@@ -282,7 +346,7 @@ class _GroupBlock extends StatelessWidget {
   }
 }
 
-/// A topic label and the habit chips that belong under it.
+/// A topic label on the left and its habit chips scrolling to the right.
 class _TopicRow extends StatelessWidget {
   const _TopicRow({
     required this.topic,
@@ -303,29 +367,38 @@ class _TopicRow extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
     final labeled = topic.title.isNotEmpty;
     return Padding(
-      key: ValueKey('topic-${topic.title}'),
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
         children: [
-          if (labeled) ...[
-            Text(
-              '${topic.title}:',
-              style: TextStyle(
-                color: colors.ink,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
+          if (labeled)
+            SizedBox(
+              width: 76,
+              child: Text(
+                '${topic.title}:',
+                style: TextStyle(
+                  color: colors.ink,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
             ),
-            const SizedBox(height: 6),
-          ],
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final item in items)
-                _SuggestionChip(suggestion: item, onPick: onPick),
-            ],
+          Expanded(
+            child: SizedBox(
+              height: 44,
+              child: ListView.separated(
+                key: ValueKey('topic-${topic.title}'),
+                scrollDirection: Axis.horizontal,
+                primary: false,
+                itemCount: items.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  return _SuggestionChip(
+                    suggestion: items[index],
+                    onPick: onPick,
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),
