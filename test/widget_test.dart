@@ -101,9 +101,35 @@ void main() {
     expect(find.text('New Habit'), findsOneWidget);
     expect(find.text('Exercise'), findsOneWidget);
     expect(find.text('Custom Habit'), findsOneWidget);
+    expect(
+      find.text('Track how often you complete a task or activity'),
+      findsOneWidget,
+    );
+    expect(find.text('Fitness:'), findsOneWidget);
+    expect(find.text('Health:'), findsOneWidget);
+    expect(find.text('Mind:'), findsOneWidget);
+    expect(find.text('Chores:'), findsOneWidget);
+    expect(find.text('Reduce:'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Close'));
+    await tester.scrollUntilVisible(
+      find.text('Pilates'),
+      250,
+      scrollable: find.descendant(
+        of: find.byKey(const ValueKey('topic-Fitness')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.text('Pilates'), findsOneWidget);
+
+    await tester.tap(find.text('To-Do'));
     await tester.pumpAndSettle();
+    expect(find.text('New task'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'Call the dentist');
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    expect(find.text('Call the dentist'), findsOneWidget);
+    expect(find.text('New Habit'), findsNothing);
+
     await tester.tap(find.byTooltip('Menu'));
     await tester.pumpAndSettle();
     expect(find.text('Monthly'), findsNothing);

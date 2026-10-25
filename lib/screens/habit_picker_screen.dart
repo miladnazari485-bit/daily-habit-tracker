@@ -7,6 +7,9 @@ import '../widgets/app_scope.dart';
 import '../widgets/sheets.dart';
 
 /// Suggested habits the user can add without typing a name.
+///
+/// Count is five labeled rows that scroll sideways. To-Do on this screen
+/// creates a task for the list on Today.
 class HabitPickerScreen extends StatefulWidget {
   const HabitPickerScreen({super.key, required this.onClose});
 
@@ -88,31 +91,61 @@ class _HabitPickerScreenState extends State<HabitPickerScreen> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _search,
-                    onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      hintText: 'Search Habits',
-                      prefixIcon: Icon(Icons.search_rounded),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _search,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(
+                          hintText: 'Search Habits',
+                          suffixIcon: Icon(Icons.search_rounded),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 156,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        onPressed: () =>
+                            showComposer(context, kind: ComposerKind.habit),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'Custom Habit',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(height: 8),
                 SizedBox(
-                  width: 156,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colors.ink,
+                      side: BorderSide(color: colors.line),
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    onPressed: () => showComposer(context, kind: ComposerKind.habit),
-                    child: const Text(
-                      'Custom Habit',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    onPressed: _addTodo,
+                    icon: const Icon(Icons.checklist_rounded, size: 18),
+                    label: const Text('To-Do'),
                   ),
                 ),
               ],
@@ -126,9 +159,15 @@ class _HabitPickerScreenState extends State<HabitPickerScreen> {
   /// True when the group has a suggestion matching the search text.
   bool _visible(HabitGroup group, String query) {
     if (query.isEmpty) return true;
-    return group.suggestions.any(
-      (item) => item.name.toLowerCase().contains(query),
-    );
+    return group.all.any((item) => item.name.toLowerCase().contains(query));
+  }
+
+  /// Opens the task form. A saved to-do closes this screen so it shows on Today.
+  Future<void> _addTodo() async {
+    final before = AppScope.of(context).tasks.length;
+    await showComposer(context, kind: ComposerKind.task);
+    if (!mounted) return;
+    if (AppScope.of(context).tasks.length > before) widget.onClose();
   }
 
   /// Adds the suggestion, or restores it when that name was archived.
@@ -182,58 +221,62 @@ class _GroupBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final items = group.suggestions.where((item) {
-      return query.isEmpty || item.name.toLowerCase().contains(query);
-    });
+    final topics = group.topics.isEmpty
+        ? [HabitTopic(title: '', suggestions: group.suggestions)]
+        : group.topics;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(_icon(group.icon), size: 18, color: colors.muted),
-              const SizedBox(width: 8),
-              Text(
-                group.title,
-                style: TextStyle(color: colors.ink, fontWeight: FontWeight.w800),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: colors.chip,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_icon(group.icon), size: 18, color: colors.ink),
+                    const SizedBox(width: 6),
+                    Text(
+                      group.title,
+                      style: TextStyle(
+                        color: colors.ink,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            group.detail,
-            style: TextStyle(color: colors.muted, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final item in items)
-                Material(
-                  color: Color(item.colorValue),
-                  borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: () => onPick(item),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      child: Text(
-                        item.name,
-                        style: TextStyle(
-                          color: foregroundOn(Color(item.colorValue)),
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: colors.chip,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    group.detail,
+                    style: TextStyle(
+                      color: colors.ink,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      height: 1.25,
                     ),
                   ),
                 ),
+              ),
             ],
           ),
+          const SizedBox(height: 10),
+          for (final topic in topics)
+            _TopicRow(topic: topic, query: query, onPick: onPick),
         ],
       ),
     );
@@ -254,5 +297,98 @@ class _GroupBlock extends StatelessWidget {
       default:
         return Icons.check_box_outlined;
     }
+  }
+}
+
+/// A topic label plus the sideways row of its habit chips.
+class _TopicRow extends StatelessWidget {
+  const _TopicRow({
+    required this.topic,
+    required this.query,
+    required this.onPick,
+  });
+
+  final HabitTopic topic;
+  final String query;
+  final ValueChanged<HabitSuggestion> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final items = topic.suggestions.where((item) {
+      return query.isEmpty || item.name.toLowerCase().contains(query);
+    }).toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+    final labeled = topic.title.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          if (labeled)
+            SizedBox(
+              width: 76,
+              child: Text(
+                '${topic.title}:',
+                style: TextStyle(
+                  color: colors.ink,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          Expanded(
+            child: SizedBox(
+              height: 44,
+              child: ListView.separated(
+                key: ValueKey('topic-${topic.title}'),
+                scrollDirection: Axis.horizontal,
+                primary: false,
+                itemCount: items.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  return _SuggestionChip(
+                    suggestion: items[index],
+                    onPick: onPick,
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One pastel habit name. Tapping it adds that habit.
+class _SuggestionChip extends StatelessWidget {
+  const _SuggestionChip({required this.suggestion, required this.onPick});
+
+  final HabitSuggestion suggestion;
+  final ValueChanged<HabitSuggestion> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Color(suggestion.colorValue);
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => onPick(suggestion),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Text(
+            suggestion.name,
+            style: TextStyle(
+              color: foregroundOn(color),
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+              height: 1.1,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

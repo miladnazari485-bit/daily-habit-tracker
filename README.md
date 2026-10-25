@@ -39,7 +39,7 @@ Versions use semantic versioning in `pubspec.yaml` (`MAJOR.MINOR.PATCH+build`) a
 ## What you can do
 
 - On Today, work through To-Do List, Daily Habits, and Completed. A habit moves into Completed on the day it hits its goal.
-- Pick a suggested habit from the + button, or make a custom one. The choice is saved on the phone.
+- Pick a suggested habit from the + button, or make a custom one. Count is five sideways rows: Fitness, Health, Mind, Chores, and Reduce. To-Do on that same screen adds a task. The choice is saved on the phone.
 - Read the Journal for each log, with the time, the habit, and the amount.
 - See the week on Calendar as colored blocks for habits and to-dos.
 - Use Settings for appearance, week start, font size, archive, export, and a Google address kept on this phone. Sign-in does not contact Google.
