@@ -143,7 +143,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: colors.card,
-                  borderRadius: BorderRadius.zero,
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,13 +341,13 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
               color: ratio <= 0
                   ? colors.chip
                   : color.withValues(alpha: 0.25 + 0.75 * ratio),
-              borderRadius: BorderRadius.zero,
+              borderRadius: BorderRadius.circular(10),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: () => _editDay(habit, day),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.zero,
+                    borderRadius: BorderRadius.circular(10),
                     border: isSelected
                         ? Border.all(color: colors.ink, width: 1.6)
                         : null,

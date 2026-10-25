@@ -244,7 +244,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       context: context,
       backgroundColor: colors.card,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.zero),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return SafeArea(
@@ -303,9 +303,9 @@ class _ColorField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: block.color,
-      borderRadius: BorderRadius.zero,
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(8),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -352,7 +352,7 @@ class _DayHead extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: today ? colors.ink : Colors.transparent,
-            borderRadius: BorderRadius.zero,
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
             '${day.day}',
@@ -379,7 +379,7 @@ class _MonthChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: colors.chip,
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
         label,
@@ -411,9 +411,9 @@ class _RoundStep extends StatelessWidget {
       message: tooltip,
       child: Material(
         color: filled ? colors.ink : colors.chip,
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.zero,
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: SizedBox(
             height: 44,

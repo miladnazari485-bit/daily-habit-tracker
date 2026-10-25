@@ -3,7 +3,7 @@
 /// Semantic versioning: MAJOR for a storage format that old builds cannot
 /// read, MINOR for a new page or behavior, PATCH for a fix. [appBuildNumber]
 /// is the Android versionCode and increases on every installable build.
-const String appVersionName = '1.4.0';
+const String appVersionName = '1.4.1';
 
 /// Android versionCode. Must go up for each APK you install over the last one.
-const int appBuildNumber = 7;
+const int appBuildNumber = 8;

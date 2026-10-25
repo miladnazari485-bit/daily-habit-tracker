@@ -101,7 +101,7 @@ class ResponsiveFrame extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: colors.scaffold,
-                  borderRadius: BorderRadius.zero,
+                  borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
                       color: colors.ink.withValues(alpha: 0.14),
@@ -111,7 +111,7 @@ class ResponsiveFrame extends StatelessWidget {
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.zero,
+                  borderRadius: BorderRadius.circular(32),
                   child: SizedBox(width: 400, height: height, child: child),
                 ),
               ),

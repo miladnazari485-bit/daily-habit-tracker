@@ -79,7 +79,7 @@ class SettingsScreen extends StatelessWidget {
                       onTap: () => _info(
                         context,
                         'Tutorial',
-                        'The + button asks for a habit or a to-do. A habit chip is saved as a habit. A to-do chip is saved on the to-do list. The days on Today scroll sideways, and Today is marked.',
+                        'The + button opens New Habit. Count is five rows you can scroll sideways: Fitness, Health, Mind, Chores, and Reduce. Today keeps one week across the top. Tap a to-do to write a comment. The row stays one line until you tap it.',
                       ),
                     ),
                   ),
@@ -374,9 +374,9 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Material(
                 color: const Color(0xFFC7B6F2),
-                borderRadius: BorderRadius.zero,
+                borderRadius: BorderRadius.circular(16),
                 child: InkWell(
-                  borderRadius: BorderRadius.zero,
+                  borderRadius: BorderRadius.circular(16),
                   onTap: () => _info(
                     context,
                     'Premium',
@@ -457,7 +457,7 @@ Future<void> _choose(
     context: context,
     backgroundColor: colors.card,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.zero),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
       return SafeArea(
@@ -482,7 +482,7 @@ Future<void> _signIn(BuildContext context) async {
     isScrollControlled: true,
     backgroundColor: colors.card,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.zero),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
     builder: (context) {
       return Padding(
@@ -543,7 +543,7 @@ Future<void> _archive(BuildContext context) async {
     context: context,
     backgroundColor: colors.card,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.zero),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
       final archived = state.archivedHabits;
@@ -611,7 +611,7 @@ class AchievementsPage extends StatelessWidget {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: colors.card,
-                      borderRadius: BorderRadius.zero,
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       children: [
@@ -727,9 +727,9 @@ class _WideButton extends StatelessWidget {
     final ink = danger ? const Color(0xFF2A1214) : colors.ink;
     return Material(
       color: bg,
-      borderRadius: BorderRadius.zero,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
@@ -774,9 +774,9 @@ class _BannerButton extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: color,
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.zero,
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -811,9 +811,9 @@ class _QuietButton extends StatelessWidget {
     final colors = AppColors.of(context);
     return Material(
       color: colors.chip,
-      borderRadius: BorderRadius.zero,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -840,7 +840,7 @@ class _AccountCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: colors.card,
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colors.line),
       ),
       child: Row(

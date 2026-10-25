@@ -8,6 +8,7 @@ class TaskItem {
     required DateTime dueDate,
     this.done = false,
     this.minutes = 9 * 60,
+    this.note = '',
   }) : dueDate = dateOnly(dueDate);
 
   final String id;
@@ -17,6 +18,9 @@ class TaskItem {
 
   /// Minutes from midnight, used to place the task on the calendar.
   final int minutes;
+
+  /// Optional comment. Today hides this until the row is opened.
+  final String note;
 
   /// True when the to-do is still open and its due day is before [today].
   bool isOverdueOn(DateTime today) {
@@ -30,6 +34,7 @@ class TaskItem {
     DateTime? dueDate,
     bool? done,
     int? minutes,
+    String? note,
   }) {
     return TaskItem(
       id: id ?? this.id,
@@ -37,6 +42,7 @@ class TaskItem {
       dueDate: dueDate ?? this.dueDate,
       done: done ?? this.done,
       minutes: minutes ?? this.minutes,
+      note: note ?? this.note,
     );
   }
 
@@ -48,6 +54,7 @@ class TaskItem {
       'dueDate': dateKey(dueDate),
       'done': done,
       'minutes': minutes,
+      'note': note,
     };
   }
 
@@ -63,12 +70,14 @@ class TaskItem {
     if (dueDate == null) return null;
     final minutesRaw = raw['minutes'];
     final minutes = minutesRaw is num ? minutesRaw.round() : 9 * 60;
+    final note = raw['note'];
     return TaskItem(
       id: id,
       title: title.trim(),
       dueDate: dueDate,
       done: raw['done'] == true,
       minutes: minutes.clamp(0, 1439),
+      note: note is String ? note.trim() : '',
     );
   }
 }

@@ -82,7 +82,7 @@ class _TodayScreenState extends State<TodayScreen> {
       context: context,
       backgroundColor: AppColors.of(context).card,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.zero),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return SafeArea(
@@ -164,6 +164,7 @@ class _TodayScreenState extends State<TodayScreen> {
             children: [
               _WeekStrip(
                 selected: selected,
+                weekStart: state.weekStart,
                 onSelect: state.selectDate,
               ),
               const SizedBox(height: 16),
@@ -269,157 +270,81 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 }
 
-/// Sideways day strip. Today is labeled, and the row scrolls past this week.
-class _WeekStrip extends StatefulWidget {
-  const _WeekStrip({required this.selected, required this.onSelect});
+/// Seven day pills for the week that contains the selected day.
+///
+/// This stays a single week. The full month grid lives on the Calendar tab,
+/// so Today does not grow into a second calendar.
+class _WeekStrip extends StatelessWidget {
+  const _WeekStrip({
+    required this.selected,
+    required this.weekStart,
+    required this.onSelect,
+  });
 
   final DateTime selected;
+  final int weekStart;
   final ValueChanged<DateTime> onSelect;
 
   @override
-  State<_WeekStrip> createState() => _WeekStripState();
-}
-
-class _WeekStripState extends State<_WeekStrip> {
-  static const _before = 28;
-  static const _after = 28;
-  static const _width = 54.0;
-  static const _gap = 6.0;
-
-  final ScrollController _controller = ScrollController();
-  late final DateTime _origin = dateOnly(
-    DateTime.now(),
-  ).subtract(const Duration(days: _before));
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _reveal(widget.selected, jump: true);
-    });
-  }
-
-  @override
-  void didUpdateWidget(_WeekStrip oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!isSameDay(oldWidget.selected, widget.selected)) {
-      _reveal(widget.selected, jump: false);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  int _revealTries = 0;
-
-  /// Keeps [day] inside the sideways strip. If the list is not laid out yet,
-  /// this waits one frame and tries again.
-  void _reveal(DateTime day, {required bool jump}) {
-    if (!_controller.hasClients || _controller.position.maxScrollExtent <= 0) {
-      if (_revealTries > 8) return;
-      _revealTries += 1;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _reveal(day, jump: jump);
-      });
-      return;
-    }
-    _revealTries = 0;
-    final index = dateOnly(day).difference(_origin).inDays;
-    if (index < 0 || index > _before + _after) return;
-    final start = index * (_width + _gap);
-    final viewport = _controller.position.viewportDimension;
-    final target = (start - (viewport - _width) / 2).clamp(
-      0.0,
-      _controller.position.maxScrollExtent,
-    );
-    if (jump) {
-      _controller.jumpTo(target);
-    } else {
-      _controller.animateTo(
-        target,
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final today = dateOnly(DateTime.now());
-    final count = _before + _after + 1;
-    return SizedBox(
-      key: const ValueKey('today-strip'),
-      height: 74,
-      child: ListView.separated(
-        controller: _controller,
-        scrollDirection: Axis.horizontal,
-        primary: false,
-        physics: const BouncingScrollPhysics(),
-        itemCount: count,
-        separatorBuilder: (context, index) => const SizedBox(width: _gap),
-        itemBuilder: (context, index) {
-          final day = _origin.add(Duration(days: index));
-          return _DayPill(
-            key: ValueKey('day-${dateKey(day)}'),
-            day: day,
-            selected: isSameDay(day, widget.selected),
-            today: isSameDay(day, today),
-            onTap: () => widget.onSelect(day),
-          );
-        },
-      ),
+    final start = startOfWeek(selected, weekStart: weekStart);
+    return Row(
+      children: [
+        for (var i = 0; i < 7; i++)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: _DayPill(
+                day: start.add(Duration(days: i)),
+                selected: isSameDay(start.add(Duration(days: i)), selected),
+                onTap: () => onSelect(start.add(Duration(days: i))),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
 
-/// One square day. Today keeps the word Today even when another day is selected.
+/// One day in the week strip. The selected day uses the lighter card.
 class _DayPill extends StatelessWidget {
   const _DayPill({
-    super.key,
     required this.day,
     required this.selected,
-    required this.today,
     required this.onTap,
   });
 
   final DateTime day;
   final bool selected;
-  final bool today;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final today = isSameDay(day, DateTime.now());
     const letters = ['Su', 'M', 'T', 'W', 'Th', 'F', 'S'];
     return Material(
-      color: selected ? colors.card : colors.chip,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
-        side: BorderSide(
-          color: today ? colors.badge : (selected ? colors.weekday : colors.line),
-          width: today ? 2 : 1,
-        ),
-      ),
+      color: selected ? colors.card : colors.chip.withValues(alpha: 0.55),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: SizedBox(
-          width: _WeekStripState._width,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                today ? 'Today' : letters[sundayIndex(day)],
+                letters[sundayIndex(day)],
                 style: TextStyle(
-                  color: today ? colors.badge : colors.muted,
-                  fontSize: today ? 11 : 12,
+                  color: today ? colors.ink : colors.muted,
+                  fontSize: 12,
                   height: 1,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 '${day.day}',
                 style: TextStyle(
@@ -428,12 +353,6 @@ class _DayPill extends StatelessWidget {
                   height: 1.1,
                   fontWeight: FontWeight.w800,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                width: 6,
-                height: 6,
-                color: today ? colors.badge : Colors.transparent,
               ),
             ],
           ),
@@ -465,7 +384,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return InkWell(
-      borderRadius: BorderRadius.zero,
+      borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -548,8 +467,8 @@ class _EmptyLine extends StatelessWidget {
   }
 }
 
-/// One to-do. Tapping the row checks it. Overdue rows can be postponed.
-class _TodoRow extends StatelessWidget {
+/// One to-do. The row stays one line until it is opened for a comment.
+class _TodoRow extends StatefulWidget {
   const _TodoRow({
     required this.task,
     required this.today,
@@ -563,44 +482,110 @@ class _TodoRow extends StatelessWidget {
   final VoidCallback onPostpone;
 
   @override
+  State<_TodoRow> createState() => _TodoRowState();
+}
+
+class _TodoRowState extends State<_TodoRow> {
+  bool _open = false;
+  late final TextEditingController _note;
+
+  @override
+  void initState() {
+    super.initState();
+    _note = TextEditingController(text: widget.task.note);
+  }
+
+  @override
+  void didUpdateWidget(_TodoRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task.id != widget.task.id) {
+      _open = false;
+      _note.text = widget.task.note;
+    } else if (oldWidget.task.note != widget.task.note &&
+        _note.text.trim() != widget.task.note) {
+      _note.text = widget.task.note;
+    }
+  }
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  /// Writes the comment without changing the title or the due day.
+  void _saveNote(String value) {
+    AppScope.of(context).setTaskNote(widget.task.id, value);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final overdue = task.isOverdueOn(today);
+    final task = widget.task;
+    final overdue = task.isOverdueOn(widget.today);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: colors.card,
-        borderRadius: BorderRadius.zero,
-        child: InkWell(
-          borderRadius: BorderRadius.zero,
-          onTap: onToggle,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            child: Row(
-              children: [
-                Icon(
-                  task.done
-                      ? Icons.check_circle_rounded
-                      : Icons.circle_outlined,
-                  color: task.done ? colors.ink : colors.muted,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    task.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: colors.ink,
-                      fontWeight: FontWeight.w700,
-                      decoration: task.done ? TextDecoration.lineThrough : null,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    tooltip: task.done ? 'Mark not done' : 'Mark done',
+                    onPressed: widget.onToggle,
+                    icon: Icon(
+                      task.done
+                          ? Icons.check_circle_rounded
+                          : Icons.circle_outlined,
+                      color: task.done ? colors.ink : colors.muted,
+                    ),
+                  ),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setState(() => _open = !_open),
+                      child: Text(
+                        task.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: colors.ink,
+                          fontWeight: FontWeight.w700,
+                          decoration: task.done
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (task.note.isNotEmpty && !_open)
+                    Icon(Icons.chat_bubble_outline_rounded, size: 16, color: colors.muted),
+                  if (overdue && !task.done)
+                    TextButton(
+                      onPressed: widget.onPostpone,
+                      child: const Text('Postpone'),
+                    ),
+                ],
+              ),
+              if (_open)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 4, 8),
+                  child: TextField(
+                    controller: _note,
+                    autofocus: true,
+                    minLines: 2,
+                    maxLines: 4,
+                    textCapitalization: TextCapitalization.sentences,
+                    onChanged: _saveNote,
+                    decoration: const InputDecoration(
+                      hintText: 'Comment',
                     ),
                   ),
                 ),
-                if (overdue && !task.done)
-                  TextButton(onPressed: onPostpone, child: const Text('Postpone')),
-              ],
-            ),
+            ],
           ),
         ),
       ),
@@ -643,9 +628,9 @@ class _HabitTile extends StatelessWidget {
     final color = Color(habit.colorValue);
     return Material(
       color: colors.card,
-      borderRadius: BorderRadius.zero,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(18),
         onTap: onOpen,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
@@ -785,7 +770,7 @@ class _DayBar extends StatelessWidget {
             height: 22,
             decoration: BoxDecoration(
               color: colors.chip,
-              borderRadius: BorderRadius.zero,
+              borderRadius: BorderRadius.circular(6),
             ),
             alignment: Alignment.bottomCenter,
             child: FractionallySizedBox(
@@ -794,7 +779,7 @@ class _DayBar extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: ratio <= 0 ? colors.line : color.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.zero,
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
             ),

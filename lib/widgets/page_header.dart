@@ -153,7 +153,7 @@ class _ChartButton extends StatelessWidget {
           children: [
             Material(
               color: colors.ink,
-              borderRadius: BorderRadius.zero,
+              borderRadius: BorderRadius.circular(14),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: onPressed,

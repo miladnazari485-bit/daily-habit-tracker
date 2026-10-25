@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:habit_tracker/logic/dates.dart';
 import 'package:habit_tracker/main.dart';
 import 'package:habit_tracker/models/habit.dart';
+import 'package:habit_tracker/models/task_item.dart';
 import 'package:habit_tracker/state/app_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,16 +29,6 @@ void main() {
     expect(find.text('To-Do List'), findsOneWidget);
     expect(find.text('Daily Habits'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
-    final later = dateOnly(DateTime.now()).add(const Duration(days: 14));
-    await tester.scrollUntilVisible(
-      find.byKey(ValueKey('day-${dateKey(later)}')),
-      160,
-      scrollable: find.descendant(
-        of: find.byKey(const ValueKey('today-strip')),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    expect(find.byKey(ValueKey('day-${dateKey(later)}')), findsOneWidget);
 
     await tester.drag(find.byKey(const ValueKey('today-list')), const Offset(0, -500));
     await tester.pumpAndSettle();
@@ -109,11 +99,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Add'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('choose-habit')), findsOneWidget);
-    expect(find.byKey(const ValueKey('choose-todo')), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('choose-habit')));
-    await tester.pumpAndSettle();
     expect(find.text('New Habit'), findsOneWidget);
     expect(find.text('Exercise'), findsOneWidget);
     expect(find.text('Custom Habit'), findsOneWidget);
@@ -139,22 +124,15 @@ void main() {
 
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Add'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('choose-todo')));
-    await tester.pumpAndSettle();
-    expect(find.text('Each button records its own task.'), findsOneWidget);
-    await tester.tap(find.text('Pay bills'));
-    await tester.pumpAndSettle();
-    expect(find.text('Pay bills'), findsOneWidget);
-    expect(find.text('New Habit'), findsNothing);
-
     await tester.tap(find.byTooltip('Menu'));
     await tester.pumpAndSettle();
     expect(find.text('Color'), findsOneWidget);
     expect(find.text('Monthly'), findsNothing);
     expect(find.textContaining('seven days'), findsNothing);
-    expect(find.textContaining('scroll sideways'), findsOneWidget);
+    expect(
+      find.textContaining('Today keeps one week across the top'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a finished habit drops into Completed and the section folds', (
@@ -198,5 +176,55 @@ void main() {
     await tester.tap(find.text('Completed'));
     await tester.pumpAndSettle();
     expect(find.text('Wake Up Early'), findsNothing);
+  });
+
+  testWidgets('a to-do comment stays one line until the title is tapped', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState.withData(
+      tasks: [
+        TaskItem(
+          id: 'groceries',
+          title: 'Buy groceries',
+          dueDate: DateTime(2026, 10, 25),
+        ),
+      ],
+    );
+    await tester.pumpWidget(HabitTrackerApp(state: state));
+    await tester.pumpAndSettle();
+
+    final commentField = find.descendant(
+      of: find.byKey(const ValueKey('today-list')),
+      matching: find.byType(TextField),
+    );
+    final commentMark = find.descendant(
+      of: find.byKey(const ValueKey('today-list')),
+      matching: find.byIcon(Icons.chat_bubble_outline_rounded),
+    );
+    expect(commentField, findsNothing);
+    expect(commentMark, findsNothing);
+
+    await tester.tap(find.text('Buy groceries'));
+    await tester.pumpAndSettle();
+    expect(find.text('Comment'), findsOneWidget);
+
+    await tester.enterText(commentField, 'Get the oat milk');
+    await tester.pump();
+    expect(state.tasks.single.note, 'Get the oat milk');
+
+    await tester.tap(find.text('Buy groceries'));
+    await tester.pumpAndSettle();
+    expect(commentField, findsNothing);
+    expect(find.text('Get the oat milk'), findsNothing);
+    expect(commentMark, findsOneWidget);
+
+    await tester.tap(find.text('Buy groceries'));
+    await tester.pumpAndSettle();
+    expect(find.text('Get the oat milk'), findsOneWidget);
   });
 }

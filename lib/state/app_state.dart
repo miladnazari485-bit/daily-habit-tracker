@@ -521,7 +521,21 @@ class AppState extends ChangeNotifier {
   void updateTask(TaskItem task) {
     final index = _tasks.indexWhere((item) => item.id == task.id);
     if (index < 0) return;
-    _tasks[index] = task.copyWith(minutes: _tasks[index].minutes);
+    _tasks[index] = task.copyWith(
+      minutes: _tasks[index].minutes,
+      note: _tasks[index].note,
+    );
+    notifyListeners();
+    _scheduleSave();
+  }
+
+  /// Saves the comment on one to-do. An empty comment clears it.
+  void setTaskNote(String id, String note) {
+    final index = _tasks.indexWhere((task) => task.id == id);
+    if (index < 0) return;
+    final next = note.trim();
+    if (_tasks[index].note == next) return;
+    _tasks[index] = _tasks[index].copyWith(note: next);
     notifyListeners();
     _scheduleSave();
   }

@@ -148,7 +148,7 @@ class _JournalScreenState extends State<JournalScreen> {
                         : '${formatInt(entry.amount)} ${entry.unit}';
                     return Material(
                       color: colors.card,
-                      borderRadius: BorderRadius.zero,
+                      borderRadius: BorderRadius.circular(16),
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
                         child: Row(
@@ -273,7 +273,7 @@ class _JournalScreenState extends State<JournalScreen> {
       context: context,
       backgroundColor: colors.card,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.zero),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return SafeArea(
@@ -315,9 +315,9 @@ class _FilterChip extends StatelessWidget {
     final colors = AppColors.of(context);
     return Material(
       color: colors.chip,
-      borderRadius: BorderRadius.zero,
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        borderRadius: BorderRadius.zero,
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

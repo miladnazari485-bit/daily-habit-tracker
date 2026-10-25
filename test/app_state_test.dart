@@ -204,6 +204,7 @@ void main() {
         createdAt: today,
       ),
     );
+    state.setTaskNote('groceries', '  almond milk  ');
     state.updateTask(
       TaskItem(id: 'groceries', title: 'Buy fruit', dueDate: today),
     );
@@ -212,6 +213,7 @@ void main() {
     expect(state.habitById('wake')!.name, 'Wake Early');
     expect(state.tasks.single.minutes, 30);
     expect(state.tasks.single.title, 'Buy fruit');
+    expect(state.tasks.single.note, 'almond milk');
   });
 
   test('a habit log is written into the journal and survives reload', () async {
