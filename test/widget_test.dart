@@ -29,6 +29,14 @@ void main() {
     expect(find.text('To-Do List'), findsOneWidget);
     expect(find.text('Daily Habits'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('To-Do List')).dy,
+      lessThan(tester.getTopLeft(find.text('Daily Habits')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('Buy groceries')).dy,
+      lessThan(tester.getTopLeft(find.text('Wake Up Early')).dy),
+    );
 
     await tester.drag(find.byKey(const ValueKey('today-list')), const Offset(0, -500));
     await tester.pumpAndSettle();
@@ -220,11 +228,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final commentField = find.descendant(
-      of: find.byKey(const ValueKey('today-list')),
+      of: find.byKey(const ValueKey('todo-list')),
       matching: find.byType(TextField),
     );
     final commentMark = find.descendant(
-      of: find.byKey(const ValueKey('today-list')),
+      of: find.byKey(const ValueKey('todo-list')),
       matching: find.byIcon(Icons.chat_bubble_outline_rounded),
     );
     expect(commentField, findsNothing);

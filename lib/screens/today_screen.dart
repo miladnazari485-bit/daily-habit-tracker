@@ -142,11 +142,19 @@ class _TodayScreenState extends State<TodayScreen> {
     final openHabits = habits.where((habit) => !isComplete(habit, selected));
     final doneHabits = habits.where((habit) => isComplete(habit, selected));
     final doneCount = doneHabits.length;
-    final showTasks = state.todayList != 'habits';
     final showHabits = state.todayList != 'tasks';
     final tasks = _tasksFor(state, selected, today)
         .where((task) => _matches(task.title, state.boardQuery))
         .toList();
+    final todoBlock = _TodoBlock(
+      tasks: tasks,
+      today: today,
+      open: state.todosOpen,
+      allTasks: state.todayList == 'tasks',
+      onToggleSection: () => state.rememberTodosOpen(!state.todosOpen),
+      onToggleTask: state.toggleTask,
+      onPostpone: _postpone,
+    );
 
     return Column(
       children: [
@@ -165,104 +173,103 @@ class _TodayScreenState extends State<TodayScreen> {
           ),
         ),
         Expanded(
-          child: ListView(
-            key: const ValueKey('today-list'),
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+          child: Column(
             children: [
-              _WeekStrip(
-                selected: selected,
-                weekStart: state.weekStart,
-                onSelect: state.selectDate,
-              ),
-              const SizedBox(height: 16),
-              if (showTasks) ...[
-                _SectionTitle(
-                  icon: Icons.checklist_rounded,
-                  title: 'To-Do List',
-                  count: tasks.where((task) => !task.done).length,
-                  open: state.todosOpen,
-                  onTap: () => state.rememberTodosOpen(!state.todosOpen),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: _WeekStrip(
+                  selected: selected,
+                  weekStart: state.weekStart,
+                  onSelect: state.selectDate,
                 ),
-                if (state.todosOpen) ...[
-                  const SizedBox(height: 8),
-                  if (tasks.isEmpty)
-                    _EmptyLine(
-                      text: state.todayList == 'tasks'
-                          ? 'No to-dos match this view.'
-                          : 'Nothing is due on this day.',
-                    )
-                  else
-                    for (final task in tasks)
-                      _TodoRow(
-                        task: task,
-                        today: today,
-                        onToggle: () => state.toggleTask(task.id),
-                        onPostpone: () => _postpone(task),
-                      ),
-                ],
-                const SizedBox(height: 18),
-              ],
-              if (showHabits) ...[
-                _SectionTitle(
-                  icon: Icons.view_list_rounded,
-                  title: 'Daily Habits',
-                  count: openHabits.length,
-                  open: state.habitsOpen,
-                  progress: habits.isEmpty ? 0 : doneCount / habits.length,
-                  onTap: () => state.rememberHabitsOpen(!state.habitsOpen),
-                ),
-              if (state.habitsOpen) ...[
-                const SizedBox(height: 8),
-                if (openHabits.isEmpty)
-                  _EmptyLine(
-                    text: habits.isEmpty
-                        ? 'Add a habit with the + button.'
-                        : 'Every habit for this day is in Completed.',
-                  )
-                else
-                  for (final habit in openHabits)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _HabitTile(
-                        habit: habit,
-                        selected: selected,
-                        today: today,
-                        weekStart: state.weekStart,
-                        onOpen: () => widget.onOpenHabit(habit.id),
-                        onBlocked: _blocked,
-                        smartInput: state.smartInput,
-                      ),
-                    ),
-              ],
-              const SizedBox(height: 8),
-              _SectionTitle(
-                icon: Icons.check_circle_outline_rounded,
-                title: 'Completed',
-                count: doneCount,
-                open: state.completedOpen,
-                onTap: () => state.rememberCompletedOpen(!state.completedOpen),
               ),
-              if (state.completedOpen) ...[
-                const SizedBox(height: 8),
-                if (doneHabits.isEmpty)
-                  const _EmptyLine(text: 'No habit is finished for this day.')
-                else
-                  for (final habit in doneHabits)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _HabitTile(
-                        habit: habit,
-                        selected: selected,
-                        today: today,
-                        weekStart: state.weekStart,
-                        done: true,
-                        onOpen: () => widget.onOpenHabit(habit.id),
-                        onBlocked: _blocked,
-                        smartInput: state.smartInput,
+              const SizedBox(height: 12),
+              if (showHabits)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _CappedTop(maxHeight: 280, child: todoBlock),
+                )
+              else
+                Expanded(
+                  child: ListView(
+                    key: const ValueKey('today-list'),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                    children: [todoBlock],
+                  ),
+                ),
+              if (showHabits)
+                Expanded(
+                  child: ListView(
+                    key: const ValueKey('today-list'),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                    children: [
+                      _SectionTitle(
+                        icon: Icons.view_list_rounded,
+                        title: 'Daily Habits',
+                        count: openHabits.length,
+                        open: state.habitsOpen,
+                        progress: habits.isEmpty ? 0 : doneCount / habits.length,
+                        onTap: () =>
+                            state.rememberHabitsOpen(!state.habitsOpen),
                       ),
-                    ),
-              ],
-              ],
+                      if (state.habitsOpen) ...[
+                        const SizedBox(height: 8),
+                        if (openHabits.isEmpty)
+                          _EmptyLine(
+                            text: habits.isEmpty
+                                ? 'Add a habit with the + button.'
+                                : 'Every habit for this day is in Completed.',
+                          )
+                        else
+                          for (final habit in openHabits)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _HabitTile(
+                                habit: habit,
+                                selected: selected,
+                                today: today,
+                                weekStart: state.weekStart,
+                                onOpen: () => widget.onOpenHabit(habit.id),
+                                onBlocked: _blocked,
+                                smartInput: state.smartInput,
+                              ),
+                            ),
+                      ],
+                      const SizedBox(height: 8),
+                      _SectionTitle(
+                        icon: Icons.check_circle_outline_rounded,
+                        title: 'Completed',
+                        count: doneCount,
+                        open: state.completedOpen,
+                        onTap: () => state.rememberCompletedOpen(
+                          !state.completedOpen,
+                        ),
+                      ),
+                      if (state.completedOpen) ...[
+                        const SizedBox(height: 8),
+                        if (doneHabits.isEmpty)
+                          const _EmptyLine(
+                            text: 'No habit is finished for this day.',
+                          )
+                        else
+                          for (final habit in doneHabits)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _HabitTile(
+                                habit: habit,
+                                selected: selected,
+                                today: today,
+                                weekStart: state.weekStart,
+                                done: true,
+                                onOpen: () => widget.onOpenHabit(habit.id),
+                                onBlocked: _blocked,
+                                smartInput: state.smartInput,
+                              ),
+                            ),
+                      ],
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -291,6 +298,82 @@ class _TodayScreenState extends State<TodayScreen> {
       return a.dueDate.compareTo(b.dueDate);
     });
     return items;
+  }
+}
+
+/// To-dos stay above the habits. The block scrolls on its own when it is long.
+class _TodoBlock extends StatelessWidget {
+  const _TodoBlock({
+    required this.tasks,
+    required this.today,
+    required this.open,
+    required this.allTasks,
+    required this.onToggleSection,
+    required this.onToggleTask,
+    required this.onPostpone,
+  });
+
+  final List<TaskItem> tasks;
+  final DateTime today;
+  final bool open;
+  final bool allTasks;
+  final VoidCallback onToggleSection;
+  final ValueChanged<String> onToggleTask;
+  final ValueChanged<TaskItem> onPostpone;
+
+  @override
+  Widget build(BuildContext context) {
+    final openCount = tasks.where((task) => !task.done).length;
+    return Column(
+      key: const ValueKey('todo-list'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SectionTitle(
+          icon: Icons.checklist_rounded,
+          title: 'To-Do List',
+          count: openCount,
+          open: open,
+          onTap: onToggleSection,
+        ),
+        if (open) ...[
+          const SizedBox(height: 8),
+          if (tasks.isEmpty)
+            _EmptyLine(
+              text: allTasks
+                  ? 'No to-dos match this view.'
+                  : 'Nothing is due on this day.',
+            )
+          else
+            for (final task in tasks)
+              _TodoRow(
+                task: task,
+                today: today,
+                onToggle: () => onToggleTask(task.id),
+                onPostpone: () => onPostpone(task),
+              ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Keeps a short block at its own height, and scrolls it once it passes [maxHeight].
+class _CappedTop extends StatelessWidget {
+  const _CappedTop({required this.maxHeight, required this.child});
+
+  final double maxHeight;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: SingleChildScrollView(
+        primary: false,
+        child: child,
+      ),
+    );
   }
 }
 
